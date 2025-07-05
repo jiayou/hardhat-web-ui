@@ -12,6 +12,13 @@ const accountRoutes = require('./routes/account');
 const contractRoutes = require('./routes/contract');
 const networkRoutes = require('./routes/network');
 
+// 添加统一请求日志中间件
+router.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // 注册路由
 router.use('/block', blockRoutes);
 router.use('/tx', txRoutes);

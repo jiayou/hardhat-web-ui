@@ -1,24 +1,4 @@
-const ethers = require('ethers');
 
-/**
- * 处理函数调用结果，解决JSON序列化问题（主要针对BigInt类型）
- * @param {any} value - 需要处理的值
- * @returns {any} 处理后的值
- */
-function handleResult(value) {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  } else if (Array.isArray(value)) {
-    return value.map(handleResult);
-  } else if (value && typeof value === 'object') {
-    const result = {};
-    for (const key in value) {
-      result[key] = handleResult(value[key]);
-    }
-    return result;
-  }
-  return value;
-}
 
 /**
  * 获取智能合约列表
@@ -107,7 +87,6 @@ async function callContractMethod(hre, contractName, contractAddress, method, ar
 }
 
 module.exports = {
-  handleResult,
   getContractList,
   getContractDetails,
   deployContract,

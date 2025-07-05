@@ -54,8 +54,9 @@ async function getBlockList(provider, page = 1, pageSize = 10) {
  * @param {Object} block - 原始区块数据
  * @returns {Object} 格式化后的区块详情
  */
-function formatBlockDetails(block) {
-  // console.log(block)
+async function formatBlockDetails(provider, block) {
+  console.log(block)
+  console.log(block.transactions)
 /*
 Block {
   number: 1,
@@ -78,38 +79,30 @@ Block {
 }
 
 */
-
-  const formattedTransactions = block.transactions.map(tx => ({
-    hash: tx.hash,
-    from: tx.from,
-    to: tx.to,
-    value: tx.value ? ethers.utils.formatEther(tx.value) : '0',
-    gasLimit: tx.gasLimit?.toString() || null,
-    gasPrice: tx.gasPrice?.toString() || null,
-    input: tx.input,
-    nonce: tx.nonce,
-    transactionIndex: tx.transactionIndex
-  }));
+  let txInfo = [];
+  for (let tx_hash of block.transactions) {
+    txInfo.push(await provider.getTransaction(tx_hash));
+  }
 
   return {
       number: block.number?.toString(),
       hash: block.hash,
       timestamp: block.timestamp?.toString(),
-      parentHash: block.parentHash,
-      parentBeaconBlockRoot: block.parentBeaconBlockRoot,
-      nonce: block.nonce?.toString(),
-      difficulty: block.difficulty?.toString(),
-      gasLimit: block.gasLimit.toString(),
-      gasUsed: block.gasUsed.toString(),
-      stateRoot: block.stateRoot,
-      receiptsRoot: block.receiptsRoot,
-      blobGasUsed: block.blobGasUsed?.toString(),
-      excessBlobGas: block.excessBlobGas?.toString(),
-      miner: block.miner,
-      prevRandao: block.prevRandao,
-      extraData: block.extraData,
-      baseFeePerGas: block.baseFeePerGas?.toString(),
-      transactions: formattedTransactions,
+      // parentHash: block.parentHash,
+      // parentBeaconBlockRoot: block.parentBeaconBlockRoot,
+      // nonce: block.nonce?.toString(),
+      // difficulty: block.difficulty?.toString(),
+      // gasLimit: block.gasLimit.toString(),
+      // gasUsed: block.gasUsed.toString(),
+      // stateRoot: block.stateRoot,
+      // receiptsRoot: block.receiptsRoot,
+      // blobGasUsed: block.blobGasUsed?.toString(),
+      // excessBlobGas: block.excessBlobGas?.toString(),
+      // miner: block.miner,
+      // prevRandao: block.prevRandao,
+      // extraData: block.extraData,
+      // baseFeePerGas: block.baseFeePerGas?.toString(),
+      txInfo: txInfo, //block.transactions, //.map(async tx_hash => await provider.getTransaction(tx_hash)),
       txCount: block.transactions.length
     };
 }
@@ -126,7 +119,7 @@ async function getBlockByHash(provider, blockHash) {
     if (!block) {
       throw new Error('Block not found');
     }
-    return formatBlockDetails(block);
+    return await formatBlockDetails(provider, block);
   } catch (error) {
     console.error(`Error fetching block by hash ${blockHash}:`, error);
     throw error;
@@ -145,7 +138,7 @@ async function getBlockByNumber(provider, blockNumber) {
     if (!block) {
       throw new Error('Block not found');
     }
-    return formatBlockDetails(block);
+    return await formatBlockDetails(provider, block);
   } catch (error) {
     console.error(`Error fetching block by number ${blockNumber}:`, error);
     throw error;
@@ -181,6 +174,7 @@ async function getTransactionsInBlock(provider, blockHash) {
     throw error;
   }
 }
+
 
 module.exports = {
   getBlockList,

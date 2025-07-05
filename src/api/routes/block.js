@@ -4,7 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const blockService = require('../services/blockService');
-
+const {ethersProvider} = require('../util');
 // 获取区块列表
 router.get('/', async (req, res) => {
   try {
@@ -79,8 +79,8 @@ router.get('/by-hash/:blockHash', async (req, res) => {
     if (!blockHash.match(/^0x[0-9a-fA-F]{64}$/)) {
       return res.status(400).json({ error: '无效的区块哈希格式' });
     }
-    
-    const block = await blockService.getBlockByHash(hre.ethers.provider, blockHash);
+    let provider = ethersProvider(hre);
+    const block = await blockService.getBlockByHash(provider, blockHash);
     res.json({ block });
   } catch (error) {
     if (error.message === 'Block not found') {

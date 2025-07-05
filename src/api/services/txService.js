@@ -1,4 +1,5 @@
 const ethers = require('ethers');
+const { handleResult, extractBlockInfo } = require('../util');
 
 /**
  * 获取交易列表
@@ -10,34 +11,24 @@ const ethers = require('ethers');
 async function getTransactionList(provider, page = 1, pageSize = 10) {
   try {
     const currentBlockNumber = await provider.getBlockNumber();
-    const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
-    const endBlock = Math.max(0, startBlock - pageSize + 1);
+    // const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
+    // const endBlock = Math.max(0, startBlock - pageSize + 1);
 
-    let transactions = [];
-    for (let i = startBlock; i >= endBlock; i--) {
-      const block = await provider.getBlock(i, true);
-      if (block && block.transactions.length > 0) {
-        const blockTxs = block.transactions.map(tx => ({
-          hash: tx.hash,
-          blockNumber: tx.blockNumber,
-          from: tx.from,
-          to: tx.to,
-          value: tx.value.toString(),
-          timestamp: block.timestamp
-        }));
-        transactions = transactions.concat(blockTxs);
-      }
-    }
-
-    // 分页处理
-    const paginatedTxs = transactions.slice(0, pageSize);
+    let paginatedTxs = await extractBlockInfo(provider, currentBlockNumber, 10, 
+      async (block)=>{
+        let txs = await Promise.all(block.transactions?.map(async (tx_hash) => {
+          console.log("tx_hash:", tx_hash)
+          return await provider.getTransaction(tx_hash)
+        }))
+        console.log("txs:", txs)
+        return txs
+      })
 
     return {
       transactions: paginatedTxs,
       pagination: {
-        page,
-        pageSize,
-        total: transactions.length
+        currentBlockNumber,
+        pageSize
       }
     };
   } catch (error) {
@@ -59,29 +50,13 @@ async function getTransactionDetails(provider, txHash) {
       throw new Error('Transaction not found');
     }
 
+    console.log(tx)
     const receipt = await provider.getTransactionReceipt(txHash);
-
-    // 处理BigInt字段
-    const formattedTx = {
-      ...tx,
-      value: tx.value?.toString(),
-      gasLimit: tx.gasLimit?.toString(),
-      gasPrice: tx.gasPrice?.toString(),
-      maxFeePerGas: tx.maxFeePerGas?.toString(),
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas?.toString(),
-      chainId: tx.chainId?.toString()
-    };
-
-    const formattedReceipt = receipt ? {
-      ...receipt,
-      gasUsed: receipt.gasUsed?.toString(),
-      cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
-      effectiveGasPrice: receipt.effectiveGasPrice?.toString()
-    } : null;
-
+    console.log(receipt)
+    
     return {
-      transaction: formattedTx,
-      receipt: formattedReceipt
+      transaction: handleResult(tx),
+      receipt: handleResult(receipt)
     };
   } catch (error) {
     console.error(`Error fetching transaction ${txHash}:`, error);

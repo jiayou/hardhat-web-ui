@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const txService = require('../services/txService');
+const { ethersProvider, extractBlockInfo } = require('../util');
 
 // 获取交易列表
 router.get('/', async (req, res) => {
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
     const { hre } = req.app.locals;
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
-
+    
     const result = await txService.getTransactionList(hre.ethers.provider, page, pageSize);
     res.json(result);
   } catch (error) {
@@ -25,8 +26,8 @@ router.get('/:txHash', async (req, res) => {
   try {
     const { hre } = req.app.locals;
     const txHash = req.params.txHash;
-    
-    const result = await txService.getTransactionDetails(hre.ethers.provider, txHash);
+    let provider = ethersProvider(hre);
+    const result = await txService.getTransactionDetails(provider, txHash);
     res.json(result);
   } catch (error) {
     if (error.message === 'Transaction not found') {

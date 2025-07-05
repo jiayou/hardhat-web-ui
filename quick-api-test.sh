@@ -9,10 +9,15 @@ BASE_URL="http://localhost:3337/api"
 test_get_endpoint() {
     local endpoint=$1
     local description=$2
-    echo "\nTesting $description: $BASE_URL$endpoint"
-    curl -s -w "\nStatus Code: %{http_code}\n" "$BASE_URL$endpoint"
+    echo "\\nTesting $description: $BASE_URL$endpoint"
+    curl -s -w "\\nStatus Code: %{http_code}\\n" "$BASE_URL$endpoint"
     echo "--------------------------------------------------"
 }
+
+if [ ! -z "$1" ]; then
+    test_get_endpoint "$1" ""
+    exit 0
+fi
 
 # Test Network Information
 test_get_endpoint "/network" "Network Information"
@@ -33,7 +38,7 @@ test_get_endpoint "/contract" "Contract List"
 # test_get_endpoint "/contract/Greeter" "Contract Details (Example Contract: Greeter)"
 
 # Test Transaction Endpoints
-test_get_endpoint "/tx" "Transaction List"
-test_get_endpoint "/tx/0x0000000000000000000000000000000000000000000000000000000000000000" "Transaction Details (Example Hash)"
+# test_get_endpoint "/tx" "Transaction List"
+test_get_endpoint "/tx/0x733c0f05edf8cfacd5c36a5d78472902947e07815dc3fb4d591a5211e40e55f4" "Transaction Details (Example Hash)"
 
- echo "\nAPI tests completed\n"
+ echo "\\nAPI tests completed\\n"
