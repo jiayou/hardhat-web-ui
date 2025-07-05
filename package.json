@@ -1,0 +1,17 @@
+{
+  "name": "hardhat-web-ui",
+  "version": "1.0.0",
+  "description": "A Hardhat plugin that provides a web interface for blockchain interaction",
+  "main": "index.js",
+  "author": "CodeGeeX",
+  "license": "MIT",
+  "peerDependencies": {
+    "hardhat": "^2.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "socket.io": "^4.7.2",
+    "body-parser": "^2.2.0"
+  }
+}

@@ -1,0 +1,94 @@
+body {
+  background-color: #f5f5f5;
+}
+
+.sidebar {
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.contract-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.contract-list .list-group-item {
+  cursor: pointer;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.contract-list .list-group-item:hover {
+  background-color: #f0f0f0;
+}
+
+.contract-list .list-group-item.active {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.abi-container {
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+pre code {
+  font-size: 0.85rem;
+  padding: 0.5rem;
+}
+
+.function-card {
+  margin-bottom: 15px;
+}
+
+.function-card .card-header {
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+.function-card .card-body {
+  padding: 0.75rem 1rem;
+}
+
+.function-param {
+  margin-bottom: 10px;
+}
+
+.function-result {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.function-result pre {
+  margin-bottom: 0;
+}
+
+.nav-tabs .nav-link {
+  color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+  font-weight: bold;
+  color: #0d6efd;
+}
+
+#contractSource {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.toast {
+  background-color: white;
+}
+
+.toast-header {
+  background-color: rgba(255, 255, 255, 0.85);
+  color: #212529;
+}

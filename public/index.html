@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hardhat Web UI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/" data-link>Hardhat Web UI</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="/block" data-link>区块</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tx" data-link>交易</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/account" data-link>账户</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contract" data-link>合约</a>
+          </li>
+        </ul>
+
+        <!-- 分页大小控制 -->
+        <div class="ms-3 d-flex align-items-center">
+          <label for="pageSizeSelect" class="text-light me-2">每次查找</label>
+          <select class="form-select form-select-sm" id="pageSizeSelect" style="width: auto;">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <label for="pageSizeSelect" class="text-light me-2">个区块</label>
+        </div>
+
+        <!-- 网络信息 -->
+        <div class="ms-auto d-flex align-items-center text-light">
+          <div id="networkInfo">
+            <span class="badge bg-primary me-2">网络: <span id="networkName">加载中...</span></span>
+            <span class="badge bg-secondary">Chain ID: <span id="chainId">-</span></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 - 将由路由器动态填充 -->
+  <div id="app" class="container-fluid mt-4"></div>
+
+  <!-- 提示消息 -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto" id="toastTitle">提示</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastMessage"></div>
+    </div>
+  </div>
+
+  <!-- 脚本引用 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/highlight.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    // 初始化highlight.js
+    document.addEventListener("DOMContentLoaded", () => {
+      // hljs.highlightAll();
+    });
+  </script>
+  
+  <!-- 自定义脚本 -->
+  <script src="js/settings.js" type="module"></script>
+  <script src="js/utils.js" type="module"></script>
+  <script src="js/api.js" type="module"></script>
+  <script src="js/router.js" type="module"></script>
+  <script src="js/views/index.js" type="module"></script>
+  <script src="js/views/block.js" type="module"></script>
+  <script src="js/views/transaction.js" type="module"></script>
+  <script src="js/views/account.js" type="module"></script>
+  <script src="js/views/contract.js" type="module"></script>
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

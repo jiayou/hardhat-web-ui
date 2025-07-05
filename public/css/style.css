@@ -1,0 +1,111 @@
+/* 全局样式 */
+body {
+  background-color: #f5f5f5;
+}
+
+/* 导航栏样式 */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 侧边栏样式 */
+.sidebar {
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.list-group-item {
+  cursor: pointer;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.list-group-item:hover {
+  background-color: #f0f0f0;
+}
+
+.list-group-item.active {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* 代码块样式 */
+.code-container {
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+pre code {
+  font-size: 0.85rem;
+}
+
+/* 卡片样式 */
+.card {
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+/* 表格样式 */
+.table-container {
+  overflow-x: auto;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+/* 提示框样式 */
+.toast {
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast-header {
+  background-color: rgba(255, 255, 255, 0.85);
+  color: #212529;
+}
+
+/* 工具栏样式 */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* 分页样式 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* 高亮显示 */
+.highlight {
+  background-color: #fff3cd;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .toolbar > * {
+    margin-bottom: 0.5rem;
+  }
+}
