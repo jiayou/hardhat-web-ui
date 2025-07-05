@@ -31,11 +31,14 @@ router.get('/', async (req, res) => {
         number: block.number,
         hash: block.hash,
         timestamp: block.timestamp,
-        txCount: block.transactions.length
+        txCount: block.transactions.length,
+        gasUsed: block.gasUsed.toString(),
+        gasLimit: block.gasLimit.toString(),
+        baseFeePerGas: block.baseFeePerGas?.toString() || null
       }));
 
     res.json({
-      blocks,
+      blocks: validBlocks,
       pagination: {
         page,
         pageSize,

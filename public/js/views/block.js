@@ -101,6 +101,42 @@ const renderBlockDetails = async (blockHash) => {
                       <th scope="row">Extra Data</th>
                       <td><code>${block.extraData || '0x'}</code></td>
                     </tr>
+                    <tr>
+                      <th scope="row">Base Fee Per Gas</th>
+                      <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Blob Gas Used</th>
+                      <td>${block.blobGasUsed || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Excess Blob Gas</th>
+                      <td>${block.excessBlobGas || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Prev Randao</th>
+                      <td>${block.prevRandao || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">难度</th>
+                      <td>${parseInt(block.difficulty || 0)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">总难度</th>
+                      <td>${parseInt(block.totalDifficulty || 0)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">大小</th>
+                      <td>${parseInt(block.size || 0)} bytes</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Nonce</th>
+                      <td>${block.nonce || '0x0'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Extra Data</th>
+                      <td><code>${block.extraData || '0x'}</code></td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -190,6 +226,8 @@ const renderBlockList = async (page) => {
                       <th>时间戳</th>
                       <th>交易数</th>
                       <th>Gas Used</th>
+                      <th>Gas Limit</th>
+                      <th>Base Fee</th>
                       <th>区块哈希</th>
                       <th>操作</th>
                     </tr>
@@ -199,9 +237,11 @@ const renderBlockList = async (page) => {
                       <tr>
                         <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
                         <td>${formatDateTime(block.timestamp)}</td>
-                        <td>${block.transactions ? block.transactions.length : 0}</td>
+                        <td>${block.txCount}</td>
                         <td>${parseInt(block.gasUsed)}</td>
-                        <td><code>${shortenAddress(block.hash)}</code></td>
+                        <td>${parseInt(block.gasLimit)}</td>
+                        <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
+                        <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${block.hash}</code></td>
                         <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
                       </tr>
                     `).join('')}
