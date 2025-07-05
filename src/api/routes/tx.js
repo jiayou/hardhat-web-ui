@@ -4,16 +4,18 @@
 const express = require('express');
 const router = express.Router();
 const txService = require('../services/txService');
+const blockService = require('../services/blockService');
 const { ethersProvider, extractBlockInfo } = require('../util');
 
 // 获取交易列表
 router.get('/', async (req, res) => {
   try {
     const { hre } = req.app.locals;
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
-    
-    const result = await txService.getTransactionList(hre.ethers.provider, page, pageSize);
+    const lastBlockNum = await blockService.getLatestBlockHeight(hre.ethers.provider);
+    const blockNum = parseInt(req.query.blockNum) || lastBlockNum;
+    const batchSize = parseInt(req.query.batchSize) || 10;
+
+    const result = await txService.getTransactionList(hre.ethers.provider, blockNum, batchSize);
     res.json(result);
   } catch (error) {
     console.error('Error fetching transactions:', error);

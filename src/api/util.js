@@ -29,17 +29,21 @@ function ethersProvider(hre) {
 
 // 从最后一个区块向前查找指定数量的区块，从区块中提取符合条件的账户信息
 // 参数：当前区块，一次查询数量，查询条件（账户地址），提取方法
-// 返回：符合条件的数据
+// 返回：符合条件的数据，下一个区块号
 async function extractBlockInfo(provider, startBlock, pageSize, extractFunc) {
   let result = [];
-  for (let i = startBlock; i >= 0 && result.length < pageSize; i--) {
+  let i = startBlock
+  for (; i >= 0 && result.length < pageSize; i--) {
     console.log('extractBlockInfo', i)
     let block = await provider.getBlock(i, true);
-      let info = await extractFunc(block);
-      console.log("info:", info)
-      result.push(info);
+    let info = await extractFunc(block);
+    //   console.log("info:", info)
+    result.push(info);
   }
-  return result;
+  return {
+    data: result,
+    nextBlock: i
+  };
 }
 
 module.exports = {

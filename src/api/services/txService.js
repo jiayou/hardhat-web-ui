@@ -8,29 +8,23 @@ const { handleResult, extractBlockInfo } = require('../util');
  * @param {number} pageSize - 每页数量
  * @returns {Promise<Object>} 包含交易列表和分页信息的对象
  */
-async function getTransactionList(provider, page = 1, pageSize = 10) {
+async function getTransactionList(provider, blockNum, batchSize = 10) {
   try {
-    const currentBlockNumber = await provider.getBlockNumber();
+    // const currentBlockNumber = await provider.getBlockNumber();
     // const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
     // const endBlock = Math.max(0, startBlock - pageSize + 1);
 
-    let paginatedTxs = await extractBlockInfo(provider, currentBlockNumber, 10, 
+    let paginatedTxs = await extractBlockInfo(provider, blockNum, batchSize, 
       async (block)=>{
         let txs = await Promise.all(block.transactions?.map(async (tx_hash) => {
           console.log("tx_hash:", tx_hash)
           return await provider.getTransaction(tx_hash)
         }))
-        console.log("txs:", txs)
+        // console.log("txs:", txs)
         return txs
       })
 
-    return {
-      transactions: paginatedTxs,
-      pagination: {
-        currentBlockNumber,
-        pageSize
-      }
-    };
+    return paginatedTxs
   } catch (error) {
     console.error('Error fetching transactions:', error);
     throw error;
