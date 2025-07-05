@@ -10,14 +10,14 @@ router.get('/', async (req, res) => {
     const { hre } = req.app.locals;
 
     // 获取所有可用账户
-    const signers = await hre.ethers.getSigners();
+    const signers = await ethers.getSigners();
     const accounts = await Promise.all(signers.map(signer => signer.getAddress()));
     
     // 获取每个账户的余额
     const accountsWithBalance = await Promise.all(
       accounts.map(async (address) => {
-        const balance = await hre.ethers.provider.getBalance(address);
-        const code = await hre.ethers.provider.getCode(address);
+        const balance = await ethers.provider.getBalance(address);
+        const code = await ethers.provider.getCode(address);
         
         return {
           address,
@@ -41,14 +41,14 @@ router.get('/:address', async (req, res) => {
     const address = req.params.address;
     
     // 获取账户余额
-    const balance = await hre.ethers.provider.getBalance(address);
+    const balance = await ethers.provider.getBalance(address);
     
     // 检查是否为合约账户
-    const code = await hre.ethers.provider.getCode(address);
+    const code = await ethers.provider.getCode(address);
     const isContract = code !== '0x';
     
     // 获取交易计数
-    const transactionCount = await hre.ethers.provider.getTransactionCount(address);
+    const transactionCount = await ethers.provider.getTransactionCount(address);
     
     // 构建账户对象
     const accountData = {
@@ -83,12 +83,12 @@ router.get('/:address', async (req, res) => {
 async function getAccountTransactions(hre, address) {
   try {
     // 简化实现，获取最新的几个区块并筛选与地址相关的交易
-    const blockNumber = await hre.ethers.provider.getBlockNumber();
+    const blockNumber = await ethers.provider.getBlockNumber();
     const transactions = [];
     
     // 限制最多查询5个区块以提高性能
     for (let i = 0; i < 5 && blockNumber - i >= 0; i++) {
-      const block = await hre.ethers.provider.getBlock(blockNumber - i, true);
+      const block = await ethers.provider.getBlock(blockNumber - i, true);
       if (block && block.transactions) {
         // 筛选与指定地址相关的交易
         const relevantTxs = block.transactions.filter(tx => {

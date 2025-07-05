@@ -11,13 +11,13 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
 
-    const currentBlockNumber = await hre.ethers.provider.getBlockNumber();
+    const currentBlockNumber = await ethers.provider.getBlockNumber();
     const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
     const endBlock = Math.max(0, startBlock - pageSize + 1);
 
     let transactions = [];
     for (let i = startBlock; i >= endBlock; i--) {
-      const block = await hre.ethers.provider.getBlock(i, true);
+      const block = await ethers.provider.getBlock(i, true);
       if (block && block.transactions.length > 0) {
         const blockTxs = block.transactions.map(tx => ({
           hash: tx.hash,
@@ -54,12 +54,12 @@ router.get('/:txHash', async (req, res) => {
     const { hre } = req.app.locals;
     const txHash = req.params.txHash;
     
-    const tx = await hre.ethers.provider.getTransaction(txHash);
+    const tx = await ethers.provider.getTransaction(txHash);
     if (!tx) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    const receipt = await hre.ethers.provider.getTransactionReceipt(txHash);
+    const receipt = await ethers.provider.getTransactionReceipt(txHash);
     
     res.json({ 
       transaction: tx,

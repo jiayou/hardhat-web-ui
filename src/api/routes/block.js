@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
 
-    const currentBlockNumber = await hre.ethers.provider.getBlockNumber();
+    const currentBlockNumber = await ethers.provider.getBlockNumber();
     const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
     const endBlock = Math.max(0, startBlock - pageSize + 1);
 
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     const blocks = await Promise.all(
       blockNumbers.map(async (blockNumber) => {
         if (blockNumber < 0) return null;
-        return hre.ethers.provider.getBlock(blockNumber);
+        return ethers.provider.getBlock(blockNumber);
       })
     );
     
@@ -57,19 +57,55 @@ router.get('/:blockNumber', async (req, res) => {
   try {
     const { hre } = req.app.locals;
     const blockNumber = req.params.blockNumber;
+    console.log(`Fetching block ${blockNumber}`);
     
-    const block = await hre.ethers.provider.getBlock(blockNumber, true);
+    const block = await ethers.provider.getBlock(blockNumber, true);
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
     }
 
+    console.log(block);
+/*
+Block {
+  provider: HardhatEthersProvider {
+    _hardhatProvider: LazyInitializationProviderAdapter {
+      _providerFactory: [AsyncFunction (anonymous)],
+      _emitter: [EventEmitter],
+      _initializingPromise: [Promise],
+      provider: [BackwardsCompatibilityProviderAdapter]
+    },
+    _networkName: 'localhost',
+    _blockListeners: [],
+    _transactionHashListeners: Map(0) {},
+    _eventListeners: []
+  },
+  number: 23,
+  hash: '0xb0715cd3f5e3737147892a10039c1464d8bbd2e2ef2b47f9b04cfc23fa2f7b5c',
+  timestamp: 1751691797,
+  parentHash: '0x3b382e08bd297e1aad9105cb4b3439f95b42f908e1819ea1a63266b0119471dd',
+  parentBeaconBlockRoot: undefined,
+  nonce: '0x0000000000000000',
+  difficulty: 0n,
+  gasLimit: 30000000n,
+  gasUsed: 23622n,
+  stateRoot: undefined,
+  receiptsRoot: undefined,
+  blobGasUsed: undefined,
+  excessBlobGas: undefined,
+  miner: '0xC014BA5EC014ba5ec014Ba5EC014ba5Ec014bA5E',
+  prevRandao: null,
+  extraData: '0x',
+  baseFeePerGas: 47901124n
+}
+
+*/
     // 格式化交易数据
     const formattedTransactions = block.transactions.map(tx => ({
       label: "foobar",
       hash: tx.hash,
       from: tx.from,
       to: tx.to,
-      value: tx.value ? hre.ethers.utils.formatEther(tx.value) : '0',
+      value: tx.value ? ethers.utils.formatEther(tx.value) : '0',
       gasLimit: tx.gasLimit?.toString() || null,
       gasPrice: tx.gasPrice?.toString() || null,
       input: tx.input,

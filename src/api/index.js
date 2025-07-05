@@ -22,7 +22,7 @@ router.get('/network', async (req, res) => {
   try {
     const { hre } = req.app.locals;
     const networkName = hre.network.name;
-    const chainId = await hre.ethers.provider.getNetwork().then(net => net.chainId);
+    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
     
     res.json({
       network: {
