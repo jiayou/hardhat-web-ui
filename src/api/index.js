@@ -10,6 +10,7 @@ const blockRoutes = require('./routes/block');
 const txRoutes = require('./routes/tx');
 const accountRoutes = require('./routes/account');
 const contractRoutes = require('./routes/contract');
+const networkRoutes = require('./routes/network');
 
 // 注册路由
 router.use('/block', blockRoutes);
@@ -36,5 +37,7 @@ router.get('/network', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch network info' });
   }
 });
+
+router.use('/network', networkRoutes);
 
 module.exports = router;

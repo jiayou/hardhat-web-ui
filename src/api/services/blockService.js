@@ -50,53 +50,142 @@ async function getBlockList(provider, page = 1, pageSize = 10) {
 }
 
 /**
- * 获取区块详情
+ * 格式化区块详情数据
+ * @param {Object} block - 原始区块数据
+ * @returns {Object} 格式化后的区块详情
+ */
+function formatBlockDetails(block) {
+  // console.log(block)
+/*
+Block {
+  number: 1,
+  hash: '0x866ccbc7f9d3eb474dce1c1ccab4995d24b9b4c7c1c27979194bd3ec779bb4a7',
+  timestamp: 1751199947,
+  parentHash: '0x90b4843db62c8c1a731fde2c3187b9de635694d1f6b6d132d0f505f90d83bcf3',
+  parentBeaconBlockRoot: undefined,
+  nonce: '0x0000000000000000',
+  difficulty: 0n,
+  gasLimit: 30000000n,
+  gasUsed: 21000n,
+  stateRoot: undefined,
+  receiptsRoot: undefined,
+  blobGasUsed: undefined,
+  excessBlobGas: undefined,
+  miner: '0xC014BA5EC014ba5ec014Ba5EC014ba5Ec014bA5E',
+  prevRandao: null,
+  extraData: '0x',
+  baseFeePerGas: 875000000n
+}
+
+*/
+
+  const formattedTransactions = block.transactions.map(tx => ({
+    hash: tx.hash,
+    from: tx.from,
+    to: tx.to,
+    value: tx.value ? ethers.utils.formatEther(tx.value) : '0',
+    gasLimit: tx.gasLimit?.toString() || null,
+    gasPrice: tx.gasPrice?.toString() || null,
+    input: tx.input,
+    nonce: tx.nonce,
+    transactionIndex: tx.transactionIndex
+  }));
+
+  return {
+      number: block.number?.toString(),
+      hash: block.hash,
+      timestamp: block.timestamp?.toString(),
+      parentHash: block.parentHash,
+      parentBeaconBlockRoot: block.parentBeaconBlockRoot,
+      nonce: block.nonce?.toString(),
+      difficulty: block.difficulty?.toString(),
+      gasLimit: block.gasLimit.toString(),
+      gasUsed: block.gasUsed.toString(),
+      stateRoot: block.stateRoot,
+      receiptsRoot: block.receiptsRoot,
+      blobGasUsed: block.blobGasUsed?.toString(),
+      excessBlobGas: block.excessBlobGas?.toString(),
+      miner: block.miner,
+      prevRandao: block.prevRandao,
+      extraData: block.extraData,
+      baseFeePerGas: block.baseFeePerGas?.toString(),
+      transactions: formattedTransactions,
+      txCount: block.transactions.length
+    };
+}
+
+/**
+ * 通过区块哈希获取区块详情
  * @param {ethers.providers.Provider} provider - Ethers Provider实例
- * @param {string|number} blockNumber - 区块号或区块哈希
+ * @param {string} blockHash - 区块哈希
  * @returns {Promise<Object>} 格式化的区块详情
  */
-async function getBlockDetails(provider, blockNumber) {
+async function getBlockByHash(provider, blockHash) {
+  try {
+    const block = await provider.getBlock(blockHash, true);
+    if (!block) {
+      throw new Error('Block not found');
+    }
+    return formatBlockDetails(block);
+  } catch (error) {
+    console.error(`Error fetching block by hash ${blockHash}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 通过区块号获取区块详情
+ * @param {ethers.providers.Provider} provider - Ethers Provider实例
+ * @param {number} blockNumber - 区块号
+ * @returns {Promise<Object>} 格式化的区块详情
+ */
+async function getBlockByNumber(provider, blockNumber) {
   try {
     const block = await provider.getBlock(blockNumber, true);
     if (!block) {
       throw new Error('Block not found');
     }
-
-    // 格式化交易数据
-    const formattedTransactions = block.transactions.map(tx => ({
-      hash: tx.hash,
-      from: tx.from,
-      to: tx.to,
-      value: tx.value ? ethers.utils.formatEther(tx.value) : '0',
-      gasLimit: tx.gasLimit?.toString() || null,
-      gasPrice: tx.gasPrice?.toString() || null,
-      input: tx.input,
-      nonce: tx.nonce,
-      transactionIndex: tx.transactionIndex
-    }));
-
-    // 处理BigInt字段序列化问题
-    return {
-      number: block.number?.toString(),
-      hash: block.hash,
-      timestamp: block.timestamp?.toString(),
-      parentHash: block.parentHash,
-      nonce: block.nonce?.toString(),
-      difficulty: block.difficulty?.toString(),
-      gasLimit: block.gasLimit.toString(),
-      gasUsed: block.gasUsed.toString(),
-      miner: block.miner,
-      baseFeePerGas: block.baseFeePerGas?.toString(),
-      transactions: formattedTransactions,
-      txCount: block.transactions.length
-    };
+    return formatBlockDetails(block);
   } catch (error) {
-    console.error(`Error fetching block ${blockNumber}:`, error);
+    console.error(`Error fetching block by number ${blockNumber}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 获取最新区块高度
+ * @param {ethers.providers.Provider} provider - Ethers Provider实例
+ * @returns {Promise<number>} 最新区块高度
+ */
+async function getLatestBlockHeight(provider) {
+  try {
+    return await provider.getBlockNumber();
+  } catch (error) {
+    console.error('Error fetching latest block height:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取指定区块中的所有交易详情
+ * @param {ethers.providers.Provider} provider - Ethers Provider实例
+ * @param {string} blockHash - 区块哈希
+ * @returns {Promise<Array>} 格式化后的交易列表
+ */
+async function getTransactionsInBlock(provider, blockHash) {
+  try {
+    const block = await getBlockByHash(provider, blockHash);
+    return block.transactions;
+  } catch (error) {
+    console.error(`Error fetching transactions in block ${blockHash}:`, error);
     throw error;
   }
 }
 
 module.exports = {
   getBlockList,
-  getBlockDetails
+  getBlockByNumber,
+  getBlockByHash,
+  getLatestBlockHeight,
+  getTransactionsInBlock
 };
