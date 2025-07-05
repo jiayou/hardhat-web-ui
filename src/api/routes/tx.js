@@ -3,6 +3,7 @@
  */
 const express = require('express');
 const router = express.Router();
+const txService = require('../services/txService');
 
 // 获取交易列表
 router.get('/', async (req, res) => {
@@ -11,37 +12,8 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
 
-    const currentBlockNumber = await ethers.provider.getBlockNumber();
-    const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
-    const endBlock = Math.max(0, startBlock - pageSize + 1);
-
-    let transactions = [];
-    for (let i = startBlock; i >= endBlock; i--) {
-      const block = await ethers.provider.getBlock(i, true);
-      if (block && block.transactions.length > 0) {
-        const blockTxs = block.transactions.map(tx => ({
-          hash: tx.hash,
-          blockNumber: tx.blockNumber,
-          from: tx.from,
-          to: tx.to,
-          value: tx.value.toString(),
-          timestamp: block.timestamp
-        }));
-        transactions = transactions.concat(blockTxs);
-      }
-    }
-
-    // 分页处理
-    const paginatedTxs = transactions.slice(0, pageSize);
-
-    res.json({
-      transactions: paginatedTxs,
-      pagination: {
-        page,
-        pageSize,
-        total: transactions.length
-      }
-    });
+    const result = await txService.getTransactionList(hre.ethers.provider, page, pageSize);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching transactions:', error);
     res.status(500).json({ error: 'Failed to fetch transactions' });
@@ -54,18 +26,12 @@ router.get('/:txHash', async (req, res) => {
     const { hre } = req.app.locals;
     const txHash = req.params.txHash;
     
-    const tx = await ethers.provider.getTransaction(txHash);
-    if (!tx) {
+    const result = await txService.getTransactionDetails(hre.ethers.provider, txHash);
+    res.json(result);
+  } catch (error) {
+    if (error.message === 'Transaction not found') {
       return res.status(404).json({ error: 'Transaction not found' });
     }
-
-    const receipt = await ethers.provider.getTransactionReceipt(txHash);
-    
-    res.json({ 
-      transaction: tx,
-      receipt: receipt
-    });
-  } catch (error) {
     console.error(`Error fetching transaction ${req.params.txHash}:`, error);
     res.status(500).json({ error: `Failed to fetch transaction ${req.params.txHash}` });
   }
