@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 
+
 // 获取区块列表
 router.get('/', async (req, res) => {
   try {
@@ -62,7 +63,37 @@ router.get('/:blockNumber', async (req, res) => {
       return res.status(404).json({ error: 'Block not found' });
     }
 
-    res.json({ block });
+    // 格式化交易数据
+    const formattedTransactions = block.transactions.map(tx => ({
+      label: "foobar",
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      value: tx.value ? hre.ethers.utils.formatEther(tx.value) : '0',
+      gasLimit: tx.gasLimit?.toString() || null,
+      gasPrice: tx.gasPrice?.toString() || null,
+      input: tx.input,
+      nonce: tx.nonce,
+      transactionIndex: tx.transactionIndex
+    }));
+
+    // 解决 BigInt 序列化问题，显式转换所有可能为 BigInt 的字段
+    res.json({
+      block: {
+        // ...block,
+        transactions: formattedTransactions,
+        gasUsed: block.gasUsed.toString(),
+        gasLimit: block.gasLimit.toString(),
+        baseFeePerGas: block.baseFeePerGas?.toString(),
+        difficulty: block.difficulty?.toString(),
+        totalDifficulty: block.totalDifficulty?.toString(),
+        minerReward: block.minerReward?.toString(),
+        size: block.size?.toString(),
+        timestamp: block.timestamp?.toString(),
+        nonce: block.nonce?.toString(),
+        number: block.number?.toString()
+      }
+    });
   } catch (error) {
     console.error(`Error fetching block ${req.params.blockNumber}:`, error);
     res.status(500).json({ error: `Failed to fetch block ${req.params.blockNumber}` });

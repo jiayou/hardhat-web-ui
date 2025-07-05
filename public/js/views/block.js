@@ -167,9 +167,9 @@ const renderBlockDetails = async (blockHash) => {
                         <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
                         <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : 'Contract Creation'}</td>
-                        <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
-                        <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
-                        <td>${parseInt(tx.gas || 0)}</td>
+                        <td>${tx.value ? tx.value + ' ETH' : '0 ETH'}</td>
+                        <td>${tx.gasPrice ? tx.gasPrice + ' Gwei' : 'N/A'}</td>
+                        <td>${tx.gasLimit}</td>
                         <td>${tx.nonce || 0}</td>
                       </tr>
                     `).join('') : '<tr><td colspan="7" class="text-center">No transactions</td></tr>'}
