@@ -45,7 +45,10 @@ export function shortenAddress(address) {
  * @returns {string} - 格式化后的以太币数量
  */
 export function formatEther(wei) {
-  // 简单格式化, 未考虑大数处理
-  const ether = parseInt(wei) / 1e18;
-  return ether.toFixed(6) + ' ETH';
+  // 使用BigInt处理大数，避免精度丢失
+  if (!wei) return '0 ETH';
+  const ether = BigInt(wei) / BigInt(1e18);
+  const remainder = BigInt(wei) % BigInt(1e18);
+  const decimalPart = remainder.toString().padStart(18, '0').slice(0, 6);
+  return `${ether}.${decimalPart} ETH`;
 }

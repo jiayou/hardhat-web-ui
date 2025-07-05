@@ -15,18 +15,24 @@ router.get('/', async (req, res) => {
     const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
     const endBlock = Math.max(0, startBlock - pageSize + 1);
 
-    const blocks = [];
-    for (let i = startBlock; i >= endBlock; i--) {
-      const block = await hre.ethers.provider.getBlock(i);
-      if (block) {
-        blocks.push({
-          number: block.number,
-          hash: block.hash,
-          timestamp: block.timestamp,
-          txCount: block.transactions.length
-        });
-      }
-    }
+    // 将循环获取区块改为并发获取
+    const blockNumbers = Array.from({length: pageSize}, (_, i) => startBlock - i);
+    const blocks = await Promise.all(
+      blockNumbers.map(async (blockNumber) => {
+        if (blockNumber < 0) return null;
+        return hre.ethers.provider.getBlock(blockNumber);
+      })
+    );
+    
+    // 过滤掉null值并格式化
+    const validBlocks = blocks
+      .filter(block => block)
+      .map(block => ({
+        number: block.number,
+        hash: block.hash,
+        timestamp: block.timestamp,
+        txCount: block.transactions.length
+      }));
 
     res.json({
       blocks,
