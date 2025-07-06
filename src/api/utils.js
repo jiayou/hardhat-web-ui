@@ -1,4 +1,4 @@
-const ethers = require('ethers');
+// const ethers = require('ethers');
 
 /**
  * 处理函数调用结果，解决JSON序列化问题（主要针对BigInt类型）
@@ -21,12 +21,6 @@ function handleResult(value) {
 }
 
 
-function ethersProvider(hre) {
-    return hre.ethers.provider
-  return new ethers.JsonRpcProvider(hre.network.config.url);
-}
-
-
 // 从最后一个区块向前查找指定数量的区块，从区块中提取符合条件的账户信息
 // 参数：当前区块，一次查询数量，查询条件（账户地址），提取方法
 // 返回：符合条件的数据，下一个区块号
@@ -46,8 +40,21 @@ async function extractBlockInfo(provider, startBlock, pageSize, extractFunc) {
   };
 }
 
+
+function useFields(object, fields) 
+{
+  if (!fields) {
+    return object;
+  }
+  const result = {};
+  for (const field of fields) {
+    result[field] = object[field];
+  }
+  return handleResult(result);
+}
+
 module.exports = {
   handleResult,
-  ethersProvider,
+  useFields,
   extractBlockInfo
 }

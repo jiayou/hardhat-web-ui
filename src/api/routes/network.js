@@ -3,13 +3,12 @@
  */
 const express = require('express');
 const router = express.Router();
-const blockService = require('../services/blockService');
 
 // 获取最新区块高度
 router.get('/last-block', async (req, res) => {
   try {
-    const { hre } = req.app.locals;
-    const height = await blockService.getLatestBlockHeight(hre.ethers.provider);
+    const { httpProvider } = req.app.locals;
+    const height = await httpProvider.getBlockNumber();
     res.json({ height });
   } catch (error) {
     console.error('Error fetching latest block height:', error);
@@ -28,7 +27,7 @@ router.get('/info', async (req, res) => {
       network: {
         name: networkName,
         chainId: chainId.toString(),
-        provider: hre.network.config.url || 'local'
+        provider: hre.network.config.url || 'hardhat'
       }
     });
   } catch (error) {

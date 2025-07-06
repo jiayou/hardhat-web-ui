@@ -10,6 +10,7 @@ const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
 const apiRoutes = require('./api');
 const reload = require('./reload')
+// const ethers = require('ethers');
 
 /**
  * 启动服务器
@@ -24,6 +25,11 @@ async function launchServer(hre, port) {
 
   // 存储hre以便在路由中使用
   app.locals.hre = hre;
+  
+  // 创建HTTP提供者：有的请求hre无法获取，只能通过httpProvider获取
+  const httpProvider = new ethers.JsonRpcProvider(hre.network.config.url);
+  console.log(httpProvider)
+  app.locals.httpProvider = httpProvider;
 
   // 允许跨域请求
   app.use(cors());

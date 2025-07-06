@@ -3,13 +3,13 @@
  */
 const express = require('express');
 const router = express.Router();
-const accountService = require('../services/accountService');
+const ethereum = require('../services/ethereum');
 
 
 // 获取账户列表
 router.get('/', async (req, res) => {
   try {
-    const { hre } = req.app.locals;
+    const { httpProvider } = req.app.locals;
 
     // 获取所有可用账户
     const signers = await ethers.getSigners();
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 // 获取账户详情
 router.get('/:address', async (req, res) => {
   try {
-    const { hre } = req.app.locals;
+    const { httpProvider } = req.app.locals;
     const address = req.params.address;
     
     // 获取账户余额
@@ -68,7 +68,7 @@ router.get('/:address', async (req, res) => {
     
     // 获取相关交易
     // 注意：这里是简化实现，实际可能需要从区块链或数据库查询
-    const transactions = await accountService.getAccountTransactions(hre.ethers.provider, address);
+    const transactions = await ethereum.searchAccountTransactions(httpProvider, address);
     
     // 返回符合前端期望的数据结构
     res.json({
@@ -81,7 +81,6 @@ router.get('/:address', async (req, res) => {
   }
 });
 
-// 辅助函数：获取账户相关交易
 
 
 module.exports = router;

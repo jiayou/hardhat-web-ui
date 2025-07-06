@@ -3,7 +3,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const contractService = require('../services/contractService');
+const contractService = require('../services/hardhat');
 
 // 处理函数调用结果，解决JSON序列化问题（主要针对BigInt类型）
 // 获取智能合约列表
