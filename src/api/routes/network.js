@@ -17,4 +17,24 @@ router.get('/last-block', async (req, res) => {
   }
 });
 
+// 获取网络信息
+router.get('/info', async (req, res) => {
+  try {
+    const { hre } = req.app.locals;
+    const networkName = hre.network.name;
+    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
+    
+    res.json({
+      network: {
+        name: networkName,
+        chainId: chainId.toString(),
+        provider: hre.network.config.url || 'local'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching network info:', error);
+    res.status(500).json({ error: 'Failed to fetch network info' });
+  }
+});
+
 module.exports = router;

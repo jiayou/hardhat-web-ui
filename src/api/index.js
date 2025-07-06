@@ -20,31 +20,15 @@ router.use((req, res, next) => {
 });
 
 // 注册路由
-router.use('/block', blockRoutes);
-router.use('/tx', txRoutes);
-router.use('/account', accountRoutes);
-router.use('/contract', contractRoutes);
+router.use('/api/block', blockRoutes);
+router.use('/api/tx', txRoutes);
+router.use('/api/account', accountRoutes);
+router.use('/api/contract', contractRoutes);
+router.use('/api/network', networkRoutes);
 
-// 获取网络信息
-router.get('/network', async (req, res) => {
-  try {
-    const { hre } = req.app.locals;
-    const networkName = hre.network.name;
-    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
-    
-    res.json({
-      network: {
-        name: networkName,
-        chainId: chainId.toString(),
-        provider: hre.network.config.url || 'local'
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching network info:', error);
-    res.status(500).json({ error: 'Failed to fetch network info' });
-  }
-});
-
-router.use('/network', networkRoutes);
+// 处理未找到的API路由
+router.use('/api/*', (req, res) => {
+  return res.status(404).json({ error: 'API not found' });
+})
 
 module.exports = router;

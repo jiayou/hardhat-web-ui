@@ -10,7 +10,8 @@ const routes = {
   '/block': { view: () => import('./views/block.js').then(m => m.default) },
   '/tx': { view: () => import('./views/transaction.js').then(m => m.default) },
   '/account': { view: () => import('./views/account.js').then(m => m.default) },
-  '/contract': { view: () => import('./views/contract.js').then(m => m.default) }
+  '/contract': { view: () => import('./views/contract.js').then(m => m.default) },
+  '/404': { view: () => import('./views/404.js').then(m => m.default) }
 };
 
 /**
@@ -86,7 +87,7 @@ class Router {
    */
   async render() {
     const path = window.location.pathname;
-    const route = routes[path] || routes['/']; // 默认首页
+    const route = routes[path] || routes['/404']; // 未找到的路由显示404页面
 
     try {
       // 动态加载对应的视图组件

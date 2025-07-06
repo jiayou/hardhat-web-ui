@@ -11,7 +11,7 @@ import { getPageSize } from './settings.js';
  */
 export async function fetchNetworkInfo() {
   try {
-    const response = await fetch('/api/network');
+    const response = await fetch('/api/network/info');
     if (!response.ok) {
       throw new Error(`Network error: ${response.status} ${response.statusText}`);
     }
