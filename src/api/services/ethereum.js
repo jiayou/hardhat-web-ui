@@ -172,8 +172,26 @@ async function searchAccounts(provider, blockNum, batchSize = 10) {
 
 
 //=============================================================== 搜索某账户的全部交易
-async function searchAccountTransactions(provider, accountId) {
+async function searchAccountTransactions(provider, blockNum, batchSize, accountId) {
 
+  try {
+    const account_tx = await extractBlockInfo(provider, blockNum, batchSize, 
+      async (block)=>{
+        return await Promise.all(block.transactions?.map(async (tx_hash) => {
+          let tx_item = await provider.getTransaction(tx_hash)
+          if (tx_item.from == accountId || tx_item.to == accountId){
+            return tx_item
+          }
+          return null
+        }))
+      })
+
+    return account_tx
+
+  } catch (error) {
+    console.error(`Error fetching transactions for account ${accountId}:`, error);
+    throw error;
+  }
 }
 
 

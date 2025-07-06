@@ -40,7 +40,7 @@ async function extractBlockInfo(provider, startBlock, pageSize, extractFunc) {
   };
 }
 
-
+//从一个对象中提取指定的字段，并返回一个新的对象，其中只包含这些字段。
 function useFields(object, fields) 
 {
   if (!fields) {

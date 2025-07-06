@@ -91,4 +91,17 @@ router.get('/4', async (req, res) => {
 
 })
 
+
+
+
+// 测试 searchAccountTransactions：获取某账户的全部交易
+router.get('/5', async (req, res) => {
+    const { httpProvider } = req.app.locals;
+    const result = await ethereum.searchAccountTransactions(httpProvider, 4, 3, '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
+    console.log(result);
+    res.json(result);
+})
+
+
+
 module.exports = router;
