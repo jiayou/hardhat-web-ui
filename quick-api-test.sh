@@ -20,25 +20,25 @@ if [ ! -z "$1" ]; then
 fi
 
 # Test Network Information
-test_get_endpoint "/network" "Network Information"
+test_get_endpoint "/network/info" "Network Information"
 test_get_endpoint "/network/last-block" "Latest Block Height"
 
 # Test Account Endpoints
 test_get_endpoint "/account" "Account List"
-test_get_endpoint "/account/0x1234567890123456789012345678901234567890" "Account Details (Example Address)"
+test_get_endpoint "/account/0x976EA74026E726554dB657fA54763abd0C3a0aa9" "Account Details (Example Address)"
 
 # Test Block Endpoints
 test_get_endpoint "/block" "Block List"
-test_get_endpoint "/block/by-hash/0x2387aafb4b8f2ddc55bf44da44c62a331eb51e12beb59dec3dd3078cf4ce4df6" "Block Details by Hash"
-test_get_endpoint "/block/by-number/1" "Block Details by Number"
-test_get_endpoint "/block/block-tx/0x2387aafb4b8f2ddc55bf44da44c62a331eb51e12beb59dec3dd3078cf4ce4df6" "Block Transactions by Hash"
+test_get_endpoint "/block/0x87fecbdd41a7fbd4b121cf717420e7fb40d6415449b933dd95fe7ee4b5c7c862" "Block Details by Hash"
+test_get_endpoint "/block/1" "Block Details by Number"
 
 # Test Contract Endpoints
 test_get_endpoint "/contract" "Contract List"
-# test_get_endpoint "/contract/Greeter" "Contract Details (Example Contract: Greeter)"
+test_get_endpoint "/contract/Lock" "Contract Details (Example Contract: Lock)"
 
 # Test Transaction Endpoints
-# test_get_endpoint "/tx" "Transaction List"
+test_get_endpoint "/tx" "Transaction List"
 test_get_endpoint "/tx/0x733c0f05edf8cfacd5c36a5d78472902947e07815dc3fb4d591a5211e40e55f4" "Transaction Details (Example Hash)"
 
- echo "\\nAPI tests completed\\n"
+echo "\\nAPI tests completed\\n"
+

@@ -1,4 +1,4 @@
-
+const {handleResult} = require('../utils')
 
 /**
  * 获取智能合约列表

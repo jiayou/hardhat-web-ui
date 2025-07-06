@@ -1,5 +1,5 @@
 const ethers = require('ethers');
-const { handleResult, extractBlockInfo } = require('../util');
+const { handleResult, extractBlockInfo } = require('../utils');
 
 /**
  * 获取交易列表

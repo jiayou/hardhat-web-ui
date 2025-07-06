@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const txService = require('../services/txService');
 const blockService = require('../services/blockService');
-const { ethersProvider, extractBlockInfo } = require('../util');
+const { ethersProvider, extractBlockInfo } = require('../utils');
 
 // 获取交易列表
 router.get('/', async (req, res) => {

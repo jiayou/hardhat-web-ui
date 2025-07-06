@@ -34,7 +34,7 @@ const TransactionView = async () => {
   }
 
   try {
-    const response = await fetch(`/api/transaction/${txHash}`);
+    const response = await fetch(`/api/tx/${txHash}`);
     const data = await response.json();
 
     if (!data.transaction) {

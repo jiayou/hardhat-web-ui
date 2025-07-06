@@ -75,7 +75,7 @@ const renderBlockDetails = async (blockHash) => {
                     </tr>
                     <tr>
                       <th scope="row">交易数</th>
-                      <td>${block.transactions.length}</td>
+                      <td>${block.txInfo.length}</td>
                     </tr>
                     <tr>
                       <th scope="row">矿工</th>
@@ -147,7 +147,7 @@ const renderBlockDetails = async (blockHash) => {
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">区块交易 (${block.transactions.length})</h5>
+              <h5 class="card-title">区块交易 (${block.txInfo.length})</h5>
               <div class="table-responsive">
                 <table class="table table-hover">
                   <thead>
@@ -162,7 +162,7 @@ const renderBlockDetails = async (blockHash) => {
                     </tr>
                   </thead>
                   <tbody>
-                    ${block.transactions.length > 0 ? block.transactions.map(tx => `
+                    ${block.txInfo.length > 0 ? block.txInfo.map(tx => `
                       <tr>
                         <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>

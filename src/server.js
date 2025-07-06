@@ -25,14 +25,14 @@ async function launchServer(hre, port) {
   // 存储hre以便在路由中使用
   app.locals.hre = hre;
 
-  // 热重载
-  const api_path = path.join(__dirname, 'api')
-  app.use(reload(api_path))
-
   // 允许跨域请求
   app.use(cors());
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+
+  // 热重载
+  const api_path = path.join(__dirname, 'api')
+  app.use(reload(api_path))
 
   // 提供静态文件
   app.use(express.static(path.join(__dirname, '../public'), {
