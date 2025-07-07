@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hardhat Web UI</title>
   <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -43,11 +44,24 @@
           <label for="pageSizeSelect" class="text-light me-2">个区块</label>
         </div>
 
-        <!-- 网络信息 -->
-        <div class="ms-auto d-flex align-items-center text-light">
-          <div id="networkInfo">
-            <span class="badge bg-primary me-2">网络: <span id="networkName">加载中...</span></span>
-            <span class="badge bg-secondary">Chain ID: <span id="chainId">-</span></span>
+        <!-- Signer选择器 -->
+        <div class="ms-auto d-flex align-items-center">
+          <div class="me-3">
+            <div class="input-group">
+              <label class="input-group-text" for="signerSelect">Signer:</label>
+              <select class="form-select form-select-sm" id="signerSelect" style="min-width: 200px;">
+                <option value="">加载中...</option>
+              </select>
+              <button class="btn btn-sm btn-outline-light" id="refreshSigners" title="刷新Signers列表"><i class="bi bi-arrow-repeat"></i>刷新</button>
+            </div>
+          </div>
+          
+          <!-- 网络信息 -->
+          <div class="d-flex align-items-center text-light">
+            <div id="networkInfo">
+              <span class="badge bg-primary me-2">网络: <span id="networkName">加载中...</span></span>
+              <span class="badge bg-secondary">Chain ID: <span id="chainId">-</span></span>
+            </div>
           </div>
         </div>
 

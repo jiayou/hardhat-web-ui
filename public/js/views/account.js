@@ -49,7 +49,7 @@ const AccountView = async () => {
 
   try {
     const data = await fetchAccountDetails(address);
-    console.log(data);
+    // console.log(data);
 
     if (!data.account) {
       return `<div class="alert alert-danger m-5">账户 ${address} 未找到或网络错误</div>`;
@@ -57,7 +57,7 @@ const AccountView = async () => {
 
     const account = data.account;
 
-    let transactions = data.transactions.data.flat();
+    const transactions = data.transactions.data.flat().filter(x=> x!=null);
     console.log(transactions);
     
     return `

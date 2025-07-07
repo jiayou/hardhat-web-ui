@@ -60,12 +60,23 @@ async function deployContract(hre, contractName, args = []) {
  * @param {string} method - 方法名称
  * @param {Array} args - 方法参数
  * @param {string} value - 发送的ETH数量
+ * @param {string} signer - 指定调用者地址，默认为空使用默认账户
  * @returns {Promise<Object>} 调用结果
  */
-async function callContractMethod(hre, contractName, contractAddress, method, args = [], value = '0') {
+async function callContractMethod(hre, contractName, contractAddress, method, args = [], value = '0', signer = '') {
   try {
     const artifact = await hre.artifacts.readArtifact(contractName);
-    const contract = await hre.ethers.getContractAt(artifact.abi, contractAddress);
+    
+    // 获取合约实例
+    let contract;
+    if (signer && signer.startsWith('0x')) {
+      // 如果提供了签名者地址，使用该地址作为签名者
+      const signerWallet = await hre.ethers.getSigner(signer);
+      contract = await hre.ethers.getContractAt(artifact.abi, contractAddress, signerWallet);
+    } else {
+      // 使用默认签名者
+      contract = await hre.ethers.getContractAt(artifact.abi, contractAddress);
+    }
 
     let result;
     if (value && value !== '0') {

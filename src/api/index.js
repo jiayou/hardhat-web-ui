@@ -11,6 +11,7 @@ const txRoutes = require('./routes/tx');
 const accountRoutes = require('./routes/account');
 const contractRoutes = require('./routes/contract');
 const networkRoutes = require('./routes/network');
+const signerRoutes = require('./routes/signer');
 const testRoutes = require('./routes/test');
 
 // 添加统一请求日志中间件
@@ -26,6 +27,7 @@ router.use('/api/tx', txRoutes);
 router.use('/api/account', accountRoutes);
 router.use('/api/contract', contractRoutes);
 router.use('/api/network', networkRoutes);
+router.use('/api/signer', signerRoutes);
 router.use('/api/test', testRoutes);
 
 // 处理未找到的API路由

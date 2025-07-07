@@ -137,10 +137,24 @@ async function listAccounts(provider) {
   return await provider.listAccounts()
 }
 
+async function getSigners(provider) {
+  const accounts =  await provider.listAccounts()
+  // const traders = await searchAccounts(provider, null, 100)  // 默认搜索最近100个区块中的交易账户
+
+  // console.log(accounts)
+  // console.log(traders)
+
+  let result = accounts.map( x => x.address)
+  // console.log(result)
+
+  return result
+}
+
 
 //=============================================================== 分页搜索交易账户
 
-async function searchAccounts(provider, blockNum, batchSize = 10) {
+async function searchAccounts(provider, blockNum=null, batchSize = 10) {
+  blockNum = blockNum || (await provider.getBlockNumber())
   try {
     let paginatedTraders = await extractBlockInfo(provider, blockNum, batchSize, 
       async (block)=>{
@@ -211,6 +225,7 @@ module.exports = {
   getTransaction,
   searchAccounts,
   listAccounts,
+  getSigners,
   searchAccountTransactions
 };
 

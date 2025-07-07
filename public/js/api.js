@@ -180,3 +180,21 @@ export async function fetchAccountDetails(address) {
     throw error;
   }
 }
+
+/**
+ * 获取签名者(signers)列表
+ * @returns {Promise} 包含签名者列表的Promise
+ */
+export async function fetchSigners() {
+  try {
+    const response = await fetch('/api/signer');
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching signers:', error);
+    showToast('Error', 'Failed to fetch signers: ' + error.message);
+    throw error;
+  }
+}
