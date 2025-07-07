@@ -3,7 +3,7 @@
  */
 
 import { fetchNetworkInfo, fetchSigners } from './api.js';
-import { showToast } from './utils.js';
+import { showToast, shortenAddress } from './utils.js';
 import { initSettingsUI } from './state.js';
 import { currentSigner, cachedSigners } from './state.js';
 // 等待DOM加载完成
@@ -51,9 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
       currentSigner(this.value);
     });
     
-    // 绑定刷新按钮事件
-    document.getElementById('refreshSigners').addEventListener('click', function() {
-      loadSigners();
+    // 绑定新增按钮事件
+    document.getElementById('addSigner').addEventListener('click', function() {
+      addNewSigner();
     });
   }, 0);
 });
@@ -119,6 +119,91 @@ async function loadSigners() {
 }
 
 /**
+ * 添加新的Signer地址
+ */
+function addNewSigner() {
+  // 创建一个模态对话框
+  const modalHtml = `
+    <div class="modal fade" id="addSignerModal" tabindex="-1" aria-labelledby="addSignerModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addSignerModalLabel">新增Signer地址</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="newSignerAddress" class="form-label">Signer地址</label>
+              <input type="text" class="form-control" id="newSignerAddress" placeholder="输入以0x开头的地址...">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" id="confirmAddSigner">确认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 添加模态框到DOM
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = modalHtml;
+  document.body.appendChild(modalContainer);
+
+  // 初始化模态框
+  const modal = new bootstrap.Modal(document.getElementById('addSignerModal'));
+  modal.show();
+
+  // 绑定确认按钮事件
+  document.getElementById('confirmAddSigner').addEventListener('click', function() {
+    const newAddress = document.getElementById('newSignerAddress').value.trim();
+
+    // 验证地址格式
+    if (!newAddress || !newAddress.startsWith('0x')) {
+      showToast('错误', '请输入有效的以0x开头的地址', 'danger');
+      return;
+    }
+
+    // 获取当前signers列表
+    const currentSigners = cachedSigners();
+
+    // 检查地址是否已存在
+    if (currentSigners.includes(newAddress)) {
+      showToast('警告', '该地址已在列表中', 'warning');
+      modal.hide();
+      document.body.removeChild(modalContainer);
+      return;
+    }
+
+    // 将新地址添加到列表开头
+    currentSigners.unshift(newAddress);
+
+    // 更新缓存
+    cachedSigners(currentSigners);
+
+    // 设置为当前选中的signer
+    currentSigner(newAddress);
+
+    // 重新渲染下拉列表
+    renderSignerOptions(document.getElementById('signerSelect'), currentSigners, newAddress);
+
+    // 关闭模态框
+    modal.hide();
+    document.body.removeChild(modalContainer);
+
+    showToast('成功', '新Signer地址已添加', 'success');
+  });
+
+  // 模态框关闭时移除DOM元素
+  document.getElementById('addSignerModal').addEventListener('hidden.bs.modal', function() {
+    if (modalContainer && modalContainer.parentNode) {
+      document.body.removeChild(modalContainer);
+    }
+  });
+}
+
+/**
  * 渲染签名者选项到下拉菜单
  */
 function renderSignerOptions(selectElement, signers, selectedSigner) {
@@ -137,7 +222,7 @@ function renderSignerOptions(selectElement, signers, selectedSigner) {
     const option = document.createElement('option');
     const signerAddress = typeof signer === 'string' ? signer : signer.address;
     option.value = signerAddress;
-    option.textContent = typeof signer === 'string' ? signerAddress.slice(0, 10) + '...' : (signer.name || signerAddress.slice(0, 10) + '...');
+    option.textContent = typeof signer === 'string' ? shortenAddress(signerAddress) : (signer.name || signerAddress.slice(0, 10) + '...');
     
     if (selectedSigner && signerAddress === (typeof selectedSigner === 'string' ? selectedSigner : selectedSigner.address)) {
       option.selected = true;

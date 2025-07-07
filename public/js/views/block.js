@@ -263,7 +263,7 @@ const renderBlockList = async () => {
                         <td>${parseInt(block.gasUsed)}</td>
                         <td>${parseInt(block.gasLimit)}</td>
                         <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
-                        <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${block.hash}</code></td>
+                        <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${shortenAddress(block.hash)}</code></td>
                         <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
                       </tr>
                     `).join('')}
