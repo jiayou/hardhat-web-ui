@@ -43,6 +43,78 @@ router.post('/transfer', async (req, res) => {
   }
 })
 
+
+// 签名交易操作
+router.post('/wallet_transfer', async (req, res) => {
+  console.log(req.body);
+  try {
+    const { from, to, signedTx } = req.body;
+    const { httpProvider } = req.app.locals;
+
+    // 发送签名过的交易
+    const result = await ethereum.walletTransaction(httpProvider, from, to, signedTx);
+    res.json(result);
+  } catch (error) {
+    console.error('Error executing transfer:', error);
+    res.status(500).json({ error: error.message || 'Failed to execute transfer' });
+  }
+})
+
+
+// 准备转账交易数据
+router.post('/prepare-transfer', async (req, res) => {
+  console.log('prepare-transfer', req.body);
+  try {
+    const { from, to, amount } = req.body;
+    
+    console.log('from:', from);
+    console.log('to:', to);
+    console.log('amount:', amount);
+    
+    const { httpProvider } = req.app.locals;
+    
+    // 获取当前网络ID
+    const network = await httpProvider.getNetwork();
+    const chainId = '0x' + network.chainId.toString(16);
+    
+    // 获取当前gas价格
+    // const gasPrice = await httpProvider.getGasPrice();
+    const gasPrice = (await httpProvider.getFeeData()).gasPrice
+    const gasPriceHex = '0x' + gasPrice.toString(16);
+    
+    // 估算gas限制 - 标准转账通常是21000
+    const gasLimit = '0x5208'; // 十六进制的21000
+    
+    // 获取nonce
+    const nonce = await httpProvider.getTransactionCount(from, 'latest');
+    const nonceHex = '0x' + nonce.toString(16);
+    
+    const valueInHex = amount // 前端已经处理过，这里直接使用
+
+    // 构建完整的交易数据
+    const txData = {
+      from: from,
+      to: to,
+      value: valueInHex,
+      gas: gasLimit,
+      gasPrice: gasPriceHex,
+      chainId: chainId,
+      nonce: nonceHex
+    };
+    
+    res.json({
+      txData,
+      message: '请使用钱包应用签名此交易数据'
+    });
+  } catch (error) {
+    console.error('Error preparing transfer data:', error);
+    res.status(500).json({ error: error.message || 'Failed to prepare transfer data' });
+  }
+})
+
+
+
+
 // 设置批量大小
 router.post('/batch-size/:size', (req, res) => {
   try {

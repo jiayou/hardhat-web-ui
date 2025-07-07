@@ -289,6 +289,7 @@ AccountView.init = () => {
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button type="button" class="btn btn-primary" id="confirmTransferBtn">确认转账</button>
+                <button type="button" class="btn btn-danger"  id="walletTransferBtn">钱包转账</button>
               </div>
             </div>
           </div>
@@ -335,6 +336,54 @@ AccountView.init = () => {
           showToast('Error', `转账出错: ${error.message}`);
         }
       });
+
+      document.getElementById('walletTransferBtn').addEventListener('click', async () => {
+        try {
+
+          // 第一步：准备交易数据
+          const response = await fetch('/api/prepare-transfer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: fromAddress,
+              to: targetAddress,
+              amount: valueInHex, // 使用十六进制wei值
+              unit: 'hex' // 标识单位为十六进制
+            })
+          });
+
+          const data = await response.json();
+          const txData = data.txData;
+
+          // 第二步：使用获取到的txData进行钱包签名
+          const signedTx = await window.ethereum.request({
+            method: 'eth_signTransaction',
+            params: [txData]
+          });
+
+          // 第三步：将签名后的交易发送回后端
+          const result = await api.post('/wallet_transfer', {
+            signedTx,
+            from: userWalletAddress,
+            to: recipientAddress
+          });
+          
+          // 如果成功，显示成功消息
+          modal.hide();
+          showToast('Success', '转账已发送！交易哈希: ' + result.data.transactionHash);
+          
+          // 显示交易结果
+          console.log('交易结果:', result);
+          
+          // 刷新页面
+          setTimeout(() => window.location.reload(), 1500);
+
+        } catch (error) {
+          console.error('交易出错:', error);
+        }
+      })
     });
   }
   
