@@ -7,31 +7,16 @@
 const globalState = {
   // 当前选中的signer
   signer: null,
-  
-  // 缓存的区块数据
-  blockCache: {},
-  
-  // 缓存的交易数据
-  transactionCache: {},
-  
-  // 缓存的区块详情
-  blockDetails: {},
-  
-  // 缓存的交易详情
-  transactionDetails: {},
-  
-  // 缓存的账户数据
-  accountCache: {},
-  
-  // 最后请求的页码状态
-  lastPageState: {
-    blocks: 1,
-    transactions: 1
-  },
-  
   // 缓存的signer列表
   signers: [],
   
+  
+  // 缓存的区块数据
+  blockCache: {
+    data: [],
+    nextBlock: null, // 下一次加载的起始区块：null表示从最新区块开始；-1表示没有更多数据了。
+  },
+
   // 用户设置
   settings: {
     batchSize: 10 // 一次查询请求区块的数量
@@ -104,86 +89,27 @@ export function cachedSigners(data) {
   return globalState.signers;
 }
 
-/**
- * 缓存或获取区块列表数据
- * @param {number} page - 页码
- * @param {object|null} data - 区块数据
- * @returns {object|null} 缓存的区块数据
- */
-export function cachedBlocks(page, data) {
-  if (data !== undefined) {
-    globalState.blockCache[page] = data;
-    globalState.lastPageState.blocks = page;
-    saveGlobalState();
+// ================================================= 处理区块缓存
+
+export function updateBlockCache(result) {
+  if (!globalState.blockCache?.data) {
+    globalState.blockCache = result;
   }
-  return globalState.blockCache[page] || null;
+  else {
+    globalState.blockCache.data = [...globalState.blockCache.data, ...result.data];
+    globalState.blockCache.nextBlock = result.nextBlock;
+  }
+  saveGlobalState();
 }
 
-/**
- * 缓存或获取交易列表数据
- * @param {number} page - 页码
- * @param {object|null} data - 交易数据
- * @returns {object|null} 缓存的交易数据
- */
-export function cachedTransactions(page, data) {
-  if (data !== undefined) {
-    globalState.transactionCache[page] = data;
-    globalState.lastPageState.transactions = page;
-    saveGlobalState();
-  }
-  return globalState.transactionCache[page] || null;
+export function getCachedBlocks() {
+  return globalState.blockCache?.data || [];
 }
 
-/**
- * 缓存或获取区块详情数据
- * @param {string} blockHash - 区块哈希
- * @param {object|null} data - 区块详情数据
- * @returns {object|null} 缓存的区块详情
- */
-export function cachedBlockDetails(blockHash, data) {
-  if (data !== undefined) {
-    globalState.blockDetails[blockHash] = data;
-    saveGlobalState();
-  }
-  return globalState.blockDetails[blockHash] || null;
+export function getNextBlock() {
+  return globalState.blockCache?.nextBlock || null;
 }
 
-/**
- * 缓存或获取交易详情数据
- * @param {string} txHash - 交易哈希
- * @param {object|null} data - 交易详情数据
- * @returns {object|null} 缓存的交易详情
- */
-export function cachedTransactionDetails(txHash, data) {
-  if (data !== undefined) {
-    globalState.transactionDetails[txHash] = data;
-    saveGlobalState();
-  }
-  return globalState.transactionDetails[txHash] || null;
-}
-
-/**
- * 缓存或获取账户详情数据
- * @param {string} address - 账户地址
- * @param {object|null} data - 账户详情数据
- * @returns {object|null} 缓存的账户详情
- */
-export function cachedAccountDetails(address, data) {
-  if (data !== undefined) {
-    globalState.accountCache[address] = data;
-    saveGlobalState();
-  }
-  return globalState.accountCache[address] || null;
-}
-
-/**
- * 获取最后请求的页码状态
- * @param {string} type - 数据类型
- * @returns {number} 最后请求的页码
- */
-export function getLastPage(type) {
-  return globalState.lastPageState[type] || 1;
-}
 
 /**
  * 清空缓存数据
@@ -200,12 +126,6 @@ export function clearCache(cacheType = null) {
     globalState.signers = [];
   } else if (cacheType === 'blocks') {
     globalState.blockCache = {};
-    globalState.blockDetails = {};
-  } else if (cacheType === 'transactions') {
-    globalState.transactionCache = {};
-    globalState.transactionDetails = {};
-  } else if (cacheType === 'accounts') {
-    globalState.accountCache = {};
   } else if (cacheType === 'signers') {
     globalState.signers = [];
   }

@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 
 // 获取最新区块高度
-router.get('/last-block', async (req, res) => {
+router.get('/latest-block', async (req, res) => {
   try {
     const { httpProvider } = req.app.locals;
     const height = await httpProvider.getBlockNumber();

@@ -9,42 +9,14 @@ const { extractBlockInfo, useFields }= require('../utils');
 
 //=============================================================== 区块列表 TODO：分页查询
 
-async function getBlockList(provider, page = 1, batchSize = 10) {
+async function getBlockList(provider, blockNum = null, batchSize = 10, fields = null) {
   try {
-    const currentBlockNumber = await provider.getBlockNumber();
-    const startBlock = Math.max(0, currentBlockNumber - (page - 1) * batchSize);
-    const endBlock = Math.max(0, startBlock - batchSize + 1);
+    blockNum = blockNum || await provider.getBlockNumber();
 
     // 并发获取区块
-    const blockNumbers = Array.from({ length: batchSize }, (_, i) => startBlock - i);
-    const blocks = await Promise.all(
-      blockNumbers.map(async (blockNumber) => {
-        if (blockNumber < 0) return null;
-        return provider.getBlock(blockNumber);
-      })
-    );
+    const paginatedBlocks = await extractBlockInfo(provider, blockNum, batchSize, async (block) => block)
+    return paginatedBlocks
 
-    // 过滤并格式化区块数据
-    const validBlocks = blocks
-      .filter(block => block)
-      .map(block => ({
-        number: block.number,
-        hash: block.hash,
-        timestamp: block.timestamp,
-        txCount: block.transactions.length,
-        gasUsed: block.gasUsed.toString(),
-        gasLimit: block.gasLimit.toString(),
-        baseFeePerGas: block.baseFeePerGas?.toString() || null
-      }));
-
-    return {
-      blocks: validBlocks,
-      pagination: {
-        page,
-        batchSize,
-        total: currentBlockNumber + 1
-      }
-    };
   } catch (error) {
     console.error('Error fetching blocks:', error);
     throw error;
@@ -55,6 +27,10 @@ async function getBlockList(provider, page = 1, batchSize = 10) {
 //=============================================================== 区块详情
 async function getBlockById(provider, blockId) {
   try {
+    if ( ! blockId.startsWith('0x')) {
+      blockId = parseInt(blockId);
+    }
+
     const block = await provider.getBlock(blockId, true);
     if (!block) {
       throw new Error('Block not found');

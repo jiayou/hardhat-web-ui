@@ -9,10 +9,11 @@ const ethereum = require('../services/ethereum');
 router.get('/', async (req, res) => {
   try {
     const { httpProvider } = req.app.locals;
-    const page = parseInt(req.query.page) || 1;
+    const lastBlockNum = await httpProvider.getBlockNumber();
+    const blockNum = parseInt(req.query.blockNum) || lastBlockNum;
     const batchSize = parseInt(req.query.batchSize) || 10;
 
-    const result = await ethereum.getBlockList(httpProvider, page, batchSize);
+    const result = await ethereum.getBlockList(httpProvider, blockNum, batchSize);
     res.json(result);
   } catch (error) {
     console.error('Error fetching blocks:', error);

@@ -4,7 +4,7 @@
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
 import { fetchBlocks } from '../api.js';
-import { getBatchSize } from '../state.js';
+import { getBatchSize, getCachedBlocks, getNextBlock, updateBlockCache, clearCache } from '../state.js';
 /**
  * 渲染区块列表和详情视图
  * @returns {string} HTML内容
@@ -12,14 +12,13 @@ import { getBatchSize } from '../state.js';
 const BlockView = async () => {
   const params = new URLSearchParams(window.location.search);
   const blockHash = params.get('hash');
-  const page = parseInt(params.get('page') || '1');
 
   if (blockHash) {
     // 显示区块详情
     return renderBlockDetails(blockHash);
   } else {
     // 显示区块列表
-    return renderBlockList(page);
+    return renderBlockList();
   }
 };
 
@@ -30,6 +29,7 @@ const BlockView = async () => {
  */
 const renderBlockDetails = async (blockHash) => {
   try {
+    // 获取区块详情
     const response = await fetch(`/api/block/${blockHash}`);
     const data = await response.json();
 
@@ -37,12 +37,32 @@ const renderBlockDetails = async (blockHash) => {
       return `<div class="alert alert-danger m-5">区块 ${blockHash} 未找到</div>`;
     }
 
+    // 获取最新区块高度，用于判断"下一个区块"按钮是否可用
+    const latestBlockResponse = await fetch(`/api/network/latest-block`);
+    const latestBlockData = await latestBlockResponse.json();
+    data.latestBlock = latestBlockData.height;
+
     const block = data.block;
     
     return `
       <div class="row mt-4">
         <div class="col-12 mb-4">
-          <h2>区块 #${block.number}</h2>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>区块 #${block.number}</h2>
+            <div class="btn-group">
+              <a href="/block?hash=${block.parentHash}" class="btn btn-outline-primary" data-link>
+                <i class="bi bi-arrow-left"></i> 上一个区块
+              </a>
+              ${parseInt(block.number) < data.latestBlock ? 
+                `<a href="#" class="btn btn-outline-primary next-block-btn" data-number="${parseInt(block.number) + 1}">
+                  下一个区块 <i class="bi bi-arrow-right"></i>
+                </a>` : 
+                `<button class="btn btn-outline-secondary" disabled>
+                  下一个区块 <i class="bi bi-arrow-right"></i>
+                </button>`
+              }
+            </div>
+          </div>
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">区块信息</h5>
@@ -190,30 +210,32 @@ const renderBlockDetails = async (blockHash) => {
 
 /**
  * 渲染区块列表
- * @param {number} page - 页码
  * @returns {string} HTML内容
  */
-const renderBlockList = async (page) => {
+const renderBlockList = async () => {
   try {
-    const batchSize = getBatchSize(); // 使用全局设置的页面大小
-    const { blocks, pagination } = await fetchBlocks(page, batchSize);
-    const total = pagination.total;
+    const batchSize = getBatchSize(); // 使用全局设置的批量大小
+    let blocks = getCachedBlocks(); // 从状态获取已缓存的区块列表
+    let nextBlock = getNextBlock(); // 获取下一批区块的起始区块号
 
-    const totalPages = Math.ceil(total / batchSize);
-    
+    // 如果没有缓存的区块数据，需要初始化加载
+    if (blocks.length === 0) {
+      const result = await fetchBlocks(null, batchSize); // 获取最新的一批区块
+      // 更新缓存
+      updateBlockCache(result);
+      // 重新获取更新后的缓存数据
+      blocks = getCachedBlocks();
+      nextBlock = getNextBlock();
+    }
+
     return `
       <div class="row mt-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>区块列表</h2>
-            <div class="card">
-              <div class="card-body p-2">
-                <form id="blockSearchForm" class="m-0 d-flex">
-                  <input type="text" class="form-control me-2" placeholder="输入区块号" id="blockNumberInput">
-                  <button class="btn btn-primary" type="submit">查询</button>
-                </form>
-              </div>
-            </div>
+            <button id="refreshBlocksBtn" class="btn btn-primary">
+              <i class="bi bi-arrow-clockwise"></i> 刷新
+            </button>
           </div>
           
           <div class="card">
@@ -232,12 +254,12 @@ const renderBlockList = async (page) => {
                       <th>操作</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="blockTableBody">
                     ${blocks.map(block => `
                       <tr>
                         <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
                         <td>${formatDateTime(block.timestamp)}</td>
-                        <td>${block.txCount}</td>
+                        <td>${block.transactions ? block.transactions.length : 0}</td>
                         <td>${parseInt(block.gasUsed)}</td>
                         <td>${parseInt(block.gasLimit)}</td>
                         <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
@@ -249,11 +271,11 @@ const renderBlockList = async (page) => {
                 </table>
               </div>
               
-              <nav aria-label="区块列表分页">
-                <ul class="pagination justify-content-center">
-                  ${generatePaginationItems(page, totalPages)}
-                </ul>
-              </nav>
+              <div class="text-center mt-4">
+                <button id="loadMoreBtn" class="btn btn-primary" ${nextBlock < 0 ? 'disabled' : ''}>
+                  加载更多
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -264,22 +286,6 @@ const renderBlockList = async (page) => {
     showToast('Error', 'Failed to load blocks');
     return `<div class="alert alert-danger m-5">Failed to load block list: ${error.message}</div>`;
   }
-
-  // 在HTML返回之后添加，让页面渲染完成后执行
-  setTimeout(() => {
-    // 监听页面大小变更事件
-    const batchSizeChangedHandler = () => {
-      // 刷新当前页面
-      const params = new URLSearchParams(window.location.search);
-      const currentPage = parseInt(params.get('page') || '1');
-      window.location.href = `/block?page=${currentPage}`;
-    };
-
-    // 移除旧的监听器（如果有）
-    document.removeEventListener('batchSize-changed', batchSizeChangedHandler);
-    // 添加新的监听器
-    document.addEventListener('batchSize-changed', batchSizeChangedHandler);
-  }, 0);
 };
 
 /**
@@ -357,30 +363,109 @@ const generatePaginationItems = (currentPage, totalPages) => {
  * 区块视图初始化函数
  */
 BlockView.init = () => {
-  // 区块搜索表单处理
-  const blockSearchForm = document.getElementById('blockSearchForm');
-  if (blockSearchForm) {
-    blockSearchForm.addEventListener('submit', (e) => {
+
+  // 刷新按钮处理
+  const refreshBlocksBtn = document.getElementById('refreshBlocksBtn');
+  if (refreshBlocksBtn) {
+    refreshBlocksBtn.addEventListener('click', () => {
+      clearCache('blocks');
+      window.location.href = '/block'; // 重定向到区块列表页面，触发重新渲染
+    });
+  }
+
+  // 加载更多按钮处理
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', async () => {
+      try {
+        const nextBlock = getNextBlock();
+        if (nextBlock >= 0) {
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 加载中...';
+
+          const batchSize = getBatchSize();
+          const result = await fetchBlocks(nextBlock, batchSize);
+
+          if (result.data && result.data.length > 0) {
+            // 追加新区块到表格
+            const blockTableBody = document.getElementById('blockTableBody');
+            if (blockTableBody) {
+              const newBlocksHtml = result.data.map(block => `
+                <tr>
+                  <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
+                  <td>${formatDateTime(block.timestamp)}</td>
+                  <td>${block.transactions ? block.transactions.length : 0}</td>
+                  <td>${parseInt(block.gasUsed)}</td>
+                  <td>${parseInt(block.gasLimit)}</td>
+                  <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
+                  <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${block.hash}</code></td>
+                  <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
+                </tr>
+              `).join('');
+
+              blockTableBody.insertAdjacentHTML('beforeend', newBlocksHtml);
+            }
+
+            // 更新缓存
+            updateBlockCache(result)
+
+            // 更新按钮状态
+            loadMoreBtn.disabled = result.nextBlock < 0;
+            loadMoreBtn.innerHTML = '加载更多';
+
+            // 如果没有更多区块可加载，禁用按钮
+            if (result.nextBlock < 0) {
+              loadMoreBtn.disabled = true;
+              loadMoreBtn.innerHTML = '没有更多区块';
+            }
+          } else {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '没有更多区块';
+          }
+        }
+      } catch (error) {
+        console.error('加载更多区块失败:', error);
+        showToast('Error', '加载更多区块失败');
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.innerHTML = '重试加载';
+      }
+    });
+  }
+
+  const nextBlockBtn = document.querySelector('.next-block-btn');
+  if (nextBlockBtn) {
+    nextBlockBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const blockNumber = document.getElementById('blockNumberInput').value.trim();
-      if (blockNumber) {
-        window.location.href = `/block?hash=${blockNumber}`;
+      const nextBlockNum = nextBlockBtn.getAttribute('data-number');
+      if (nextBlockNum) {
+        try {
+          // 查询区块号对应的区块哈希
+          const response = await fetch(`/api/block/${nextBlockNum}`);
+          const data = await response.json();
+          if (data.block && data.block.hash) {
+            // 导航到下一个区块的详情页
+            window.location.href = `/block?hash=${data.block.hash}`;
+          } else {
+            showToast('错误', `无法获取区块 #${nextBlockNum}`);
+          }
+        } catch (error) {
+          console.error('获取下一个区块时出错:', error);
+          showToast('错误', '无法获取下一个区块');
+        }
       }
     });
   }
-  
-  // 分页按钮点击处理
-  const pagination = document.querySelector('.pagination');
-  if (pagination) {
-    pagination.addEventListener('click', (e) => {
-      const pageLink = e.target.closest('[data-page]');
-      if (pageLink && !pageLink.parentElement.classList.contains('disabled') && !pageLink.parentElement.classList.contains('active')) {
-        e.preventDefault();
-        const page = pageLink.getAttribute('data-page');
-        window.location.href = `/block?page=${page}`;
-      }
-    });
-  }
+
+
+  // 监听批量大小变更事件
+  const batchSizeChangedHandler = () => {
+    // do nothing
+  };
+
+  // 移除旧的监听器（如果有）
+  document.removeEventListener('batchSize-changed', batchSizeChangedHandler);
+  // 添加新的监听器
+  document.addEventListener('batchSize-changed', batchSizeChangedHandler);
 };
 
 // 导出默认视图函数

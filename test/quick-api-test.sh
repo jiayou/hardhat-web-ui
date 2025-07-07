@@ -21,7 +21,7 @@ fi
 
 # Test Network Information
 test_get_endpoint "/network/info" "Network Information"
-test_get_endpoint "/network/last-block" "Latest Block Height"
+test_get_endpoint "/network/latest-block" "Latest Block Height"
 
 # Test Account Endpoints
 test_get_endpoint "/account" "Account List"
