@@ -12,8 +12,10 @@ router.get('/', async (req, res) => {
     const lastBlockNum = await httpProvider.getBlockNumber();
     const blockNum = parseInt(req.query.blockNum) || lastBlockNum;
     const batchSize = parseInt(req.query.batchSize) || 10;
+    const fields = req.query.fields?.split(',') || [];
+    
 
-    const result = await txService.getTransactionList(httpProvider, blockNum, batchSize);
+    const result = await ethereum.searchTransactions(httpProvider, blockNum, batchSize, fields);
     res.json(result);
   } catch (error) {
     console.error('Error fetching transactions:', error);

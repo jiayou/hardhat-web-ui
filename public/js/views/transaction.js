@@ -12,14 +12,29 @@ const TransactionView = async () => {
   const params = new URLSearchParams(window.location.search);
   const txHash = params.get('hash');
   
+  // 显示最近交易列表
   if (!txHash) {
+
+    // fetch /api/tx?blockNum=&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber
+    const response = await fetch('/api/tx?batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber');
+    const result = await response.json();
+
+    // { nextBlock: 13, data: [[...]]}
+    const flattenData = result.data.flat();
+    const nextBlock = result.nextBlock;
+
+    // 表格显示flattenData
+    // [
+    //   {"hash":"0xa02bafb08af6942051c5b031f7d17f9db64cd9f8275852ec1a1eae79b1941f1c","from":"0x2546BcD3c84621e976D8185a91A922aE77ECEc30","to":"0xd0F350b13465B5251bb03E4bbf9Fa1DbC4a378F3","value":"0","gasPrice":"302099417","gasLimit":"30000000","nonce":1,"blockNumber":11}
+    //   ...
+    // ]
     return `
       <div class="row mt-4">
         <div class="col-12">
-          <div class="alert alert-warning">请指定交易哈希</div>
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">交易查询</h5>
+          <div class="d-flex justify-content-between align-items-center">
+            <h2>最近交易</h2>
+            <button id="refreshTxBtn" class="btn btn-outline-primary"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
+            <div>
               <form id="txSearchForm" class="mt-3">
                 <div class="input-group mb-3">
                   <input type="text" class="form-control" placeholder="输入交易哈希" id="txHashInput">
@@ -28,8 +43,44 @@ const TransactionView = async () => {
               </form>
             </div>
           </div>
+          <div class="card">
+            <div class="card-body">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">交易哈希</th>
+                    <th scope="col">发送方</th>
+                    <th scope="col">接收方</th>
+                    <th scope="col">金额</th>
+                    <th scope="col">Gas Price</th>
+                    <th scope="col">Gas Limit</th>
+                    <th scope="col">Nonce</th>
+                    <th scope="col">区块</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${flattenData.map(tx => `
+                    <tr>
+                      <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                      <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
+                      <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                      <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
+                      <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
+                      <td>${tx.gasLimit}</td>
+                      <td>${tx.nonce}</td>
+                      <td><a href="/block?number=${tx.blockNumber}" data-link>${tx.blockNumber}</a></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              <div class="d-flex justify-content-center mt-3">
+                <button id="loadMoreTxBtn" class="btn btn-outline-primary" data-next-block="${nextBlock}">加载更多</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
     `;
   }
 
@@ -164,6 +215,60 @@ TransactionView.init = () => {
       const txHash = document.getElementById('txHashInput').value.trim();
       if (txHash) {
         window.location.href = `/tx?hash=${txHash}`;
+      }
+    });
+  }
+
+  // 刷新按钮处理
+  const refreshTxBtn = document.getElementById('refreshTxBtn');
+  if (refreshTxBtn) {
+    refreshTxBtn.addEventListener('click', () => {
+      // 刷新交易列表的处理函数
+      window.location.reload();
+    });
+  }
+
+  // 加载更多按钮处理
+  const loadMoreTxBtn = document.getElementById('loadMoreTxBtn');
+  if (loadMoreTxBtn) {
+    loadMoreTxBtn.addEventListener('click', async (e) => {
+      const nextBlock = e.target.getAttribute('data-next-block');
+      if (nextBlock) {
+        try {
+          const response = await fetch(`/api/tx?blockNum=${nextBlock}&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber`);
+          const result = await response.json();
+          
+          if (result.data && result.data.length > 0) {
+            const flattenData = result.data.flat();
+            const tbody = document.querySelector('table tbody');
+            
+            // 添加新行到表格
+            flattenData.forEach(tx => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
+                <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
+                <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
+                <td>${tx.gasLimit}</td>
+                <td>${tx.nonce}</td>
+                <td><a href="/block?number=${tx.blockNumber}" data-link>${tx.blockNumber}</a></td>
+              `;
+              tbody.appendChild(row);
+            });
+            
+            // 更新按钮的nextBlock属性
+            loadMoreTxBtn.setAttribute('data-next-block', result.nextBlock);
+          } else {
+            // 没有更多数据时隐藏按钮
+            loadMoreTxBtn.classList.add('d-none');
+            showToast('提示', '没有更多交易数据');
+          }
+        } catch (error) {
+          console.error('Error loading more transactions:', error);
+          showToast('Error', 'Failed to load more transactions');
+        }
       }
     });
   }
