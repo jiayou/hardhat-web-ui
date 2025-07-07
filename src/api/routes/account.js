@@ -42,6 +42,9 @@ router.get('/:address', async (req, res) => {
     const { httpProvider } = req.app.locals;
     const address = req.params.address;
     
+    const blockNum = req.query.blockNum || await httpProvider.getBlockNumber();
+    const batchSize = req.query.batchSize || 10;
+
     // 获取账户余额
     const balance = await ethers.provider.getBalance(address);
     
@@ -68,7 +71,7 @@ router.get('/:address', async (req, res) => {
     
     // 获取相关交易
     // 注意：这里是简化实现，实际可能需要从区块链或数据库查询
-    const transactions = await ethereum.searchAccountTransactions(httpProvider, address);
+    const transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
     
     // 返回符合前端期望的数据结构
     res.json({

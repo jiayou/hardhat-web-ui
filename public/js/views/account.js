@@ -49,12 +49,16 @@ const AccountView = async () => {
 
   try {
     const data = await fetchAccountDetails(address);
+    console.log(data);
 
     if (!data.account) {
       return `<div class="alert alert-danger m-5">账户 ${address} 未找到或网络错误</div>`;
     }
 
     const account = data.account;
+
+    let transactions = data.transactions.data.flat();
+    console.log(transactions);
     
     return `
       <div class="row mt-4">
@@ -122,7 +126,7 @@ const AccountView = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    ${data.transactions && data.transactions.length > 0 ? data.transactions.map(tx => `
+                    ${transactions && transactions.length > 0 ? transactions.map(tx => `
                       <tr>
                         <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td>${tx.from.toLowerCase() === address.toLowerCase() ? '发出' : '接收'}</td>
