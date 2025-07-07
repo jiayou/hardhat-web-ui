@@ -68,11 +68,16 @@ const ContractView = async () => {
                     <table class="table">
                       <tbody id="contractDetails-info"></tbody>
                     </table>
+                    
+                    <h5 class="mt-4">合约字节码</h5>
+                    <div class="bytecode-container">
+                      <textarea id="contractBytecode" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
+                    </div>
                   </div>
                   <div class="col-md-6">
                     <h5>ABI</h5>
                     <div class="abi-container">
-                      <pre><code id="contractAbi" class="language-json"></code></pre>
+                      <textarea id="contractAbi" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
                     </div>
                   </div>
                 </div>
@@ -207,10 +212,45 @@ async function loadContractDetails(contractName) {
 
       // 显示ABI
       document.getElementById('contractAbi').textContent = JSON.stringify(currentContract.abi, null, 2);
-      // 使用安全的方式检查并调用highlight.js
-      if (typeof hljs !== 'undefined') {
-        hljs.highlightElement(document.getElementById('contractAbi'));
+      // 显示字节码
+      document.getElementById('contractBytecode').textContent = currentContract.bytecode;
+      
+      // 根据窗口大小计算textarea高度
+      function adjustByteCodeHeight() {
+        const windowHeight = window.innerHeight;
+        const bytecodeTextarea = document.getElementById('contractBytecode');
+        if (bytecodeTextarea) {
+          // 计算高度为窗口高度的30%，最小100px
+          const newHeight = Math.max(Math.floor(windowHeight * 0.4), 100);
+          bytecodeTextarea.style.height = newHeight + 'px';
+        }
       }
+      
+      // 初次调整高度
+      adjustByteCodeHeight();
+      
+      // 监听窗口大小变化
+      window.addEventListener('resize', adjustByteCodeHeight);
+      // 根据窗口大小计算ABI textarea高度
+      function adjustAbiHeight() {
+        const windowHeight = window.innerHeight;
+        const abiTextarea = document.getElementById('contractAbi');
+        if (abiTextarea) {
+          // 计算高度为窗口高度的70%，最小150px
+          const newHeight = Math.max(Math.floor(windowHeight * 0.65), 150);
+          abiTextarea.style.height = newHeight + 'px';
+        }
+      }
+      
+      // 初次调整ABI高度
+      adjustAbiHeight();
+      
+      // 监听窗口大小变化，同时更新ABI高度
+      window.removeEventListener('resize', adjustByteCodeHeight);
+      window.addEventListener('resize', function() {
+        adjustByteCodeHeight();
+        adjustAbiHeight();
+      });
 
       // 显示合约信息
       const info = [
