@@ -4,6 +4,7 @@
 
 import { showToast } from './utils.js';
 import { getPageSize } from './settings.js';
+import { currentSigner } from './state.js';
 
 /**
  * 获取网络信息
@@ -88,6 +89,10 @@ export async function fetchContractDetails(contractName) {
  */
 export async function deployContract(contractName, args) {
   try {
+    // 获取当前选中的signer
+    const signer = currentSigner();
+    console.log("deploy contract with signer:", signer)
+    
     const response = await fetch('/api/contract/deploy', {
       method: 'POST',
       headers: {
@@ -95,7 +100,8 @@ export async function deployContract(contractName, args) {
       },
       body: JSON.stringify({
         contractName: contractName,
-        args: args
+        args: args,
+        signer: signer // 自动附加当前signer
       }),
     });
     if (!response.ok) {
@@ -120,6 +126,10 @@ export async function deployContract(contractName, args) {
  */
 export async function callContractFunction(address, contractName, functionName, args, options = {}) {
   try {
+    // 获取当前选中的signer
+    const signer = currentSigner();
+    console.log("call contract method with signer:", signer)
+    
     const response = await fetch('/api/contract/call', {
       method: 'POST',
       headers: {
@@ -130,6 +140,7 @@ export async function callContractFunction(address, contractName, functionName, 
         contractName: contractName,
         method: functionName,
         args,
+        signer: signer, // 自动附加当前signer
         ...options
       }),
     });

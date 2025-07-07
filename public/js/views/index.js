@@ -2,8 +2,9 @@
  * 首页视图
  */
 
-import { fetchNetworkInfo, fetchSigners } from '../api.js';
+import { fetchNetworkInfo } from '../api.js';
 import { showToast, formatDateTime } from '../utils.js';
+import { currentSigner, cachedSigners } from '../state.js';
 
 /**
  * 渲染首页视图
@@ -13,24 +14,21 @@ const IndexView = async () => {
   try {
     const networkData = await fetchNetworkInfo();
 
-    // 加载signers列表
-    loadSigners();
+    // 不再需要加载signers列表，现在由app.js管理
 
     // 设置刷新按钮事件
     setTimeout(() => {
       const refreshBtn = document.getElementById('refreshSigners');
-      if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadSigners);
-      }
+      // 刷新按钮不再需要绑定loadSigners事件
 
       // 设置signer选择变更事件
       const signerSelect = document.getElementById('signerSelect');
       if (signerSelect) {
         signerSelect.addEventListener('change', function() {
           const selectedSigner = this.value;
-          // 将选中的signer保存到localStorage
+          // 使用state.js中的函数保存signer
           if (selectedSigner) {
-            localStorage.setItem('currentSigner', selectedSigner);
+            currentSigner(selectedSigner);
             showToast('Success', `已将当前Signer设置为: ${selectedSigner.substring(0, 8)}...`);
           }
         });
@@ -122,34 +120,29 @@ async function loadSigners() {
     const signerSelect = document.getElementById('signerSelect');
     if (!signerSelect) return;
 
-    signerSelect.innerHTML = '<option value="">加载中...</option>';
+    // 获取当前选中的signer
+    const selectedSigner = currentSigner() || '';
 
-    const signers = await fetchSigners();
-    if (!signers || signers.length === 0) {
-      signerSelect.innerHTML = '<option value="">没有可用的Signers</option>';
-      return;
+    // 尝试从缓存获取signers
+    const cachedSignersList = cachedSigners();
+
+    // 如果有缓存数据，先使用缓存数据填充
+    if (cachedSignersList && cachedSignersList.length > 0) {
+      renderSignerOptions(signerSelect, cachedSignersList, selectedSigner);
+    } else {
+      signerSelect.innerHTML = '<option value="">加载中...</option>';
     }
 
-    // 获取当前选中的signer
-    const currentSigner = localStorage.getItem('currentSigner') || '';
+    // 获取最新的signers数据
+    const signers = await fetchSigners();
 
-    // 清空选择框并填充新数据
-    signerSelect.innerHTML = '<option value="">请选择Signer</option>';
-
-    signers.forEach(signer => {
-      const option = document.createElement('option');
-      option.value = signer;
-      // 显示前8个字符...
-      option.textContent = `${signer.substring(0, 8)}...`;
-      option.title = signer; // 完整hash显示为title提示
-
-      // 如果是当前选中的signer，设为选中状态
-      if (signer === currentSigner) {
-        option.selected = true;
-      }
-
-      signerSelect.appendChild(option);
-    });
+    // 保存到缓存
+    if (signers && signers.length > 0) {
+      cachedSigners(signers);
+      renderSignerOptions(signerSelect, signers, selectedSigner);
+    } else if (!cachedSignersList || cachedSignersList.length === 0) {
+      signerSelect.innerHTML = '<option value="">没有可用的Signers</option>';
+    }
   } catch (error) {
     console.error('Error loading signers:', error);
     const signerSelect = document.getElementById('signerSelect');
@@ -157,6 +150,32 @@ async function loadSigners() {
       signerSelect.innerHTML = '<option value="">加载失败</option>';
     }
   }
+}
+
+/**
+ * 渲染signer选项到下拉框中
+ * @param {HTMLElement} selectElement - 下拉框元素
+ * @param {Array} signers - signers列表
+ * @param {string} selectedSigner - 当前选中的signer
+ */
+function renderSignerOptions(selectElement, signers, selectedSigner) {
+  // 清空选择框并填充新数据
+  selectElement.innerHTML = '<option value="">请选择Signer</option>';
+
+  signers.forEach(signer => {
+    const option = document.createElement('option');
+    option.value = signer;
+    // 显示前8个字符...
+    option.textContent = `${signer.substring(0, 8)}...`;
+    option.title = signer; // 完整hash显示为title提示
+
+    // 如果是当前选中的signer，设为选中状态
+    if (signer === selectedSigner) {
+      option.selected = true;
+    }
+
+    selectElement.appendChild(option);
+  });
 }
 
 // 导出默认视图函数

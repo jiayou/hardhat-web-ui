@@ -34,13 +34,15 @@ router.get('/:contractName', async (req, res) => {
 router.post('/deploy', async (req, res) => {
   try {
     const { hre } = req.app.locals;
-    const { contractName, args = [] } = req.body;
+    const { contractName, signer, args = [] } = req.body;
 
     if (!contractName) {
       return res.status(400).json({ error: 'Contract name is required' });
     }
 
-    const result = await contractService.deployContract(hre, contractName, args);
+    console.log('Current network:', hre.network.name);
+    console.log('Deploying contract:', contractName, 'signer:', signer);
+    const result = await contractService.deployContract(hre, contractName, args, signer);
     res.json({
       success: true,
       ...result
@@ -55,7 +57,7 @@ router.post('/deploy', async (req, res) => {
 router.post('/call', async (req, res) => {
   try {
     const { hre } = req.app.locals;
-    const { contractName, contractAddress, method, args = [], value = '0' } = req.body;
+    const { contractName, contractAddress, method, signer, args = [], value = '0' } = req.body;
 
     if (!contractName || !contractAddress || !method) {
       return res.status(400).json({ error: 'Contract name, address and method are required' });
@@ -63,9 +65,9 @@ router.post('/call', async (req, res) => {
 
     console.log('Current network:', hre.network.name);
     console.log('contractAddress:', contractAddress);
-    console.log('Calling contract:', contractName, 'method:', method, 'args:', args, value);
+    console.log('Calling contract:', contractName, 'method:', method, 'args:', args, value, 'signer:', signer);
 
-    const result = await contractService.callContractMethod(hre, contractName, contractAddress, method, args, value);
+    const result = await contractService.callContractMethod(hre, contractName, contractAddress, method, args, value, signer);
     res.json(result);
   } catch (error) {
     console.error('Error calling contract method:', error);

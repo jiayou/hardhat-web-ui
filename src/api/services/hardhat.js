@@ -34,11 +34,21 @@ async function getContractDetails(hre, contractName) {
  * @param {HardhatRuntimeEnvironment} hre - Hardhat运行时环境
  * @param {string} contractName - 合约名称
  * @param {Array} args - 合约构造函数参数
+ * @param {string} signer - 指定调用者地址，默认为空使用默认账户
  * @returns {Promise<Object>} 部署结果
  */
-async function deployContract(hre, contractName, args = []) {
+async function deployContract(hre, contractName, args = [], signer = '') {
   try {
-    const Contract = await hre.ethers.getContractFactory(contractName);
+    let Contract;
+    if (signer && signer.startsWith('0x')) {
+      // 如果提供了签名者地址，使用该地址作为签名者
+      const signerWallet = await hre.ethers.getSigner(signer);
+      Contract = await hre.ethers.getContractFactory(contractName, signerWallet);
+    } else {
+      // 使用默认签名者
+      Contract = await hre.ethers.getContractFactory(contractName);
+    }
+    
     const contract = await Contract.deploy(...args);
     await contract.waitForDeployment();
 
