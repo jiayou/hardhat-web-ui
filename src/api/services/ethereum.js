@@ -188,8 +188,85 @@ async function searchAccountTransactions(provider, blockNum, batchSize, accountI
 
 
 
+//================================================================== 获取账户详情
 
+/**
+ * 获取账户详情，根据账户类型返回不同字段
+ * 
+ * @param {object} provider - 以太坊提供者
+ * @param {string} address - 账户地址
+ * @returns {object} 根据账户类型返回不同的账户详情
+ */
+async function getAccountDetails(provider, address) {
+  // 基本信息（所有账户类型都需要）
+  const balance = await provider.getBalance(address);
+  const transactions = null //await provider.getTransactions(address);
+  const nonce = null // await provider.getNonce(address);
 
+  // 获取代码以判断账户类型（EOA账户代码为空，合约账户有代码）
+  const code = await provider.getCode(address);
+  const isContract = code && code !== '0x';
+
+  // 通用的网络信息
+  const gasPrice = null // await provider.getGasPrice();
+  const blockNumber = await provider.getBlockNumber();
+
+  // 根据账户类型返回不同字段
+  if (isContract) {
+    // 合约账户特有信息
+    // const abi = await provider.getABI(address);
+    // const events = await provider.getEvents(address);
+    // const methods = await provider.getMethods(address);
+    // const creationTime = await provider.getCreationTime(address);
+
+    // 代币相关（如果合约是代币合约）
+    // const erc20Balance = await provider.getERC20Balance(address);
+    // const erc721Balance = await provider.getERC721Balance(address);
+    // const erc1155Balance = await provider.getERC1155Balance(address);
+
+    return {
+      type: 'Contract',
+      address,
+      balance,
+      transactions,
+      nonce,
+      code,
+      // abi,
+      // events,
+      // methods,
+      // creationTime,
+      // erc20Balance,
+      // erc721Balance,
+      // erc1155Balance,
+      // 网络信息
+      gasPrice,
+      blockNumber
+    };
+  } else {
+    // 外部账户(EOA)特有信息
+    const status = null // await provider.getStatus(address);
+
+    // 代币余额
+    // const erc20Balance = await provider.getERC20Balance(address);
+    // const erc721Balance = await provider.getERC721Balance(address);
+    // const erc1155Balance = await provider.getERC1155Balance(address);
+
+    return {
+      type: 'EOA',
+      address,
+      balance,
+      transactions,
+      nonce,
+      // status,
+      // erc20Balance,
+      // erc721Balance,
+      // erc1155Balance,
+      // 网络信息
+      gasPrice,
+      blockNumber
+    };
+  }
+}
 
 
 
@@ -241,6 +318,7 @@ module.exports = {
   getTransaction,
   searchAccounts,
   listAccounts,
+  getAccountDetails,
   getSigners,
   sendTransaction,
   searchAccountTransactions

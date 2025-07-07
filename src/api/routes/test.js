@@ -104,4 +104,14 @@ router.get('/5', async (req, res) => {
 
 
 
+// 查询账户详情
+router.get('/6/:address', async (req, res) => {
+    const { httpProvider } = req.app.locals;
+    const address = req.params.address;
+    const result = await ethereum.getAccountDetails(httpProvider, address);
+    console.log(result);
+    res.json({message: "see backend log for details"});
+})
+
+
 module.exports = router;

@@ -17,7 +17,6 @@ const AccountView = async () => {
     return `
       <div class="row mt-4">
         <div class="col-12">
-          <div class="alert alert-warning">请指定账户地址</div>
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">账户查询</h5>
@@ -102,35 +101,35 @@ const AccountView = async () => {
         </div>
 
         ${account.code && account.code !== '0x' ? '' : `
-<div class="col-12 mb-4">
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">转账给他</h5>
-      <form id="transferForm" class="mt-3">
-        <div class="mb-3">
-          <label for="transferAmount" class="form-label">转账金额</label>
-          <div class="input-group">
-            <input type="number" class="form-control" id="transferAmount" min="0" step="any" required placeholder="输入金额">
-            <select class="form-select" id="transferUnit" style="max-width: 100px;">
-              <option value="wei">Wei</option>
-              <option value="gwei">Gwei</option>
-              <option value="ether" selected>ETH</option>
-            </select>
+        <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">转账给他</h5>
+              <form id="transferForm" class="mt-3">
+                <div class="mb-3">
+                  <label for="transferAmount" class="form-label">转账金额</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="transferAmount" min="0" step="any" required placeholder="输入金额">
+                    <select class="form-select" id="transferUnit" style="max-width: 100px;">
+                      <option value="wei">Wei</option>
+                      <option value="gwei">Gwei</option>
+                      <option value="ether" selected>ETH</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="transferBtn" data-address="${address}">转账</button>
+              </form>
+            </div>
           </div>
         </div>
-        <button type="submit" class="btn btn-primary" id="transferBtn" data-address="${address}">转账</button>
-      </form>
-    </div>
-  </div>
-</div>
-`}
+        `}
 
         ${account.code && account.code !== '0x' ? `
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">合约代码</h5>
-              <pre class="mt-3"><code>${account.code}</code></pre>
+              <textarea class="form-control mt-3 font-monospace" readonly style="height: 200px; font-family: monospace;">${account.code}</textarea>
             </div>
           </div>
         </div>
@@ -209,10 +208,9 @@ AccountView.init = () => {
           .map(account => `
             <a href="/account?address=${account.address}" class="list-group-item list-group-item-action">
               <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1">${shortenAddress(account.address)}</h6>
+                <code style="overflow-x: auto; display: inline-block; min-width: 400px;">${account.address}</code>
                 <span class="badge bg-primary rounded-pill">${(parseInt(account.balance) / 1e18).toFixed(4)} ETH</span>
               </div>
-              <small class="text-muted">${account.transactionCount || 0} 交易</small>
             </a>
           `)
           .join('');
