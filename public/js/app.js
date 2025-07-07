@@ -4,16 +4,16 @@
 
 import { fetchNetworkInfo, fetchSigners } from './api.js';
 import { showToast } from './utils.js';
-import { initSettings } from './settings.js';
+import { initSettingsUI } from './state.js';
 import { currentSigner, cachedSigners } from './state.js';
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
   console.time('DOMContentLoaded初始化耗时');
   
   // 初始化全局设置
-  console.time('initSettings耗时');
-  initSettings();
-  console.timeEnd('initSettings耗时');
+  console.time('initSettingsUI耗时');
+  initSettingsUI();
+  console.timeEnd('initSettingsUI耗时');
   
   // 初始化Socket.io连接
   console.time('初始化Socket.io连接耗时');

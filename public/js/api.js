@@ -3,7 +3,7 @@
  */
 
 import { showToast } from './utils.js';
-import { getPageSize } from './settings.js';
+import { getBatchSize } from './state.js';
 import { currentSigner } from './state.js';
 
 /**
@@ -27,12 +27,12 @@ export async function fetchNetworkInfo() {
 /**
  * 获取区块列表
  * @param {number} page - 页码
- * @param {number} pageSize - 每页数量
+ * @param {number} batchSize - 每页数量
  * @returns {Promise} 包含区块列表的Promise
  */
-export async function fetchBlocks(page = 1, pageSize = getPageSize()) {
+export async function fetchBlocks(page = 1, batchSize = getBatchSize()) {
   try {
-    const response = await fetch(`/api/block?page=${page}&pageSize=${pageSize}`);
+    const response = await fetch(`/api/block?page=${page}&batchSize=${batchSize}`);
     if (!response.ok) {
       throw new Error(`Network error: ${response.status} ${response.statusText}`);
     }

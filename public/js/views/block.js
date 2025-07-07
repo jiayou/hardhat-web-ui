@@ -4,7 +4,7 @@
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
 import { fetchBlocks } from '../api.js';
-import { getPageSize } from '../settings.js';
+import { getBatchSize } from '../state.js';
 /**
  * 渲染区块列表和详情视图
  * @returns {string} HTML内容
@@ -195,11 +195,11 @@ const renderBlockDetails = async (blockHash) => {
  */
 const renderBlockList = async (page) => {
   try {
-    const pageSize = getPageSize(); // 使用全局设置的页面大小
-    const { blocks, pagination } = await fetchBlocks(page, pageSize);
+    const batchSize = getBatchSize(); // 使用全局设置的页面大小
+    const { blocks, pagination } = await fetchBlocks(page, batchSize);
     const total = pagination.total;
 
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(total / batchSize);
     
     return `
       <div class="row mt-4">
@@ -268,7 +268,7 @@ const renderBlockList = async (page) => {
   // 在HTML返回之后添加，让页面渲染完成后执行
   setTimeout(() => {
     // 监听页面大小变更事件
-    const pageSizeChangedHandler = () => {
+    const batchSizeChangedHandler = () => {
       // 刷新当前页面
       const params = new URLSearchParams(window.location.search);
       const currentPage = parseInt(params.get('page') || '1');
@@ -276,9 +276,9 @@ const renderBlockList = async (page) => {
     };
 
     // 移除旧的监听器（如果有）
-    document.removeEventListener('pageSizeChanged', pageSizeChangedHandler);
+    document.removeEventListener('batchSize-changed', batchSizeChangedHandler);
     // 添加新的监听器
-    document.addEventListener('pageSizeChanged', pageSizeChangedHandler);
+    document.addEventListener('batchSize-changed', batchSizeChangedHandler);
   }, 0);
 };
 

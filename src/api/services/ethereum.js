@@ -9,14 +9,14 @@ const { extractBlockInfo, useFields }= require('../utils');
 
 //=============================================================== 区块列表 TODO：分页查询
 
-async function getBlockList(provider, page = 1, pageSize = 10) {
+async function getBlockList(provider, page = 1, batchSize = 10) {
   try {
     const currentBlockNumber = await provider.getBlockNumber();
-    const startBlock = Math.max(0, currentBlockNumber - (page - 1) * pageSize);
-    const endBlock = Math.max(0, startBlock - pageSize + 1);
+    const startBlock = Math.max(0, currentBlockNumber - (page - 1) * batchSize);
+    const endBlock = Math.max(0, startBlock - batchSize + 1);
 
     // 并发获取区块
-    const blockNumbers = Array.from({ length: pageSize }, (_, i) => startBlock - i);
+    const blockNumbers = Array.from({ length: batchSize }, (_, i) => startBlock - i);
     const blocks = await Promise.all(
       blockNumbers.map(async (blockNumber) => {
         if (blockNumber < 0) return null;
@@ -41,7 +41,7 @@ async function getBlockList(provider, page = 1, pageSize = 10) {
       blocks: validBlocks,
       pagination: {
         page,
-        pageSize,
+        batchSize,
         total: currentBlockNumber + 1
       }
     };

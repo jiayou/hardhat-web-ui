@@ -30,7 +30,12 @@ const globalState = {
   },
   
   // 缓存的signer列表
-  signers: []
+  signers: [],
+  
+  // 用户设置
+  settings: {
+    batchSize: 10 // 一次查询请求区块的数量
+  }
 };
 
 // 初始化全局状态
@@ -48,6 +53,9 @@ function initGlobalState() {
     if (!globalState.signer) {
       globalState.signer = localStorage.getItem('currentSigner') || null;
     }
+    
+    // 初始化设置
+    initSettings();
   } catch (error) {
     console.error('加载全局状态时出错:', error);
   }
@@ -237,3 +245,85 @@ export const debug = {
     saveGlobalState();
   }
 };
+
+/**
+ * 获取批量查询的数量
+ * @returns {number} 批量查询的数量
+ */
+export function getBatchSize() {
+  return globalState.settings.batchSize;
+}
+
+/**
+ * 设置批量查询的数量
+ * @param {number} size - 要设置的批量数量
+ * @returns {number} 设置后的批量数量
+ */
+export function setBatchSize(size) {
+  if (typeof size === 'number' && size > 0) {
+    globalState.settings.batchSize = size;
+    saveGlobalState();
+    
+    // 调用后端API更新批量大小
+    fetch(`/api/batch-size/${size}`, { method: 'POST' })
+      .then(response => response.json())
+      .catch(error => console.error('更新批量大小失败:', error));
+  }
+  return globalState.settings.batchSize;
+}
+
+/**
+ * 初始化用户设置
+ */
+function initSettings() {
+  try {
+    // 确保settings对象存在
+    if (!globalState.settings) {
+      globalState.settings = {};
+    }
+    
+    // 确保batchSize有默认值
+    if (!globalState.settings.batchSize) {
+      globalState.settings.batchSize = 10;
+    }
+    
+    saveGlobalState();
+  } catch (error) {
+    console.error('初始化设置时出错:', error);
+  }
+}
+
+/**
+ * 初始化设置UI界面
+ * 用于设置页面元素的初始值和事件监听
+ */
+export function initSettingsUI() {
+  try {
+    // 确保先初始化基础设置
+    initSettings();
+    
+    // 设置批量大小选择器的值
+    const batchSizeSelector = document.getElementById('batchSizeSelect');
+    if (batchSizeSelector) {
+      batchSizeSelector.value = globalState.settings.batchSize;
+      
+      // 添加事件监听
+      batchSizeSelector.addEventListener('change', function() {
+        const newSize = parseInt(this.value, 10);
+        setBatchSize(newSize);
+        
+        // 触发自定义事件通知页面刷新
+        const event = new CustomEvent('batchSize-changed', { 
+          detail: { batchSize: newSize } 
+        });
+        document.dispatchEvent(event);
+      });
+    }
+    
+    // 返回当前的设置对象
+    return { ...globalState.settings };
+  } catch (error) {
+    console.error('初始化设置UI时出错:', error);
+    return { batchSize: 10 };
+  }
+}
