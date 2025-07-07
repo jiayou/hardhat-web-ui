@@ -4,6 +4,7 @@
 
 import { showToast, shortenAddress } from '../utils.js';
 import { fetchAccounts, fetchAccountDetails } from '../api.js';
+import { currentSigner } from '../state.js';
 /**
  * 渲染账户详情视图
  * @returns {string} HTML内容
@@ -99,6 +100,30 @@ const AccountView = async () => {
             </div>
           </div>
         </div>
+
+        ${account.code && account.code !== '0x' ? '' : `
+<div class="col-12 mb-4">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">转账给他</h5>
+      <form id="transferForm" class="mt-3">
+        <div class="mb-3">
+          <label for="transferAmount" class="form-label">转账金额</label>
+          <div class="input-group">
+            <input type="number" class="form-control" id="transferAmount" min="0" step="any" required placeholder="输入金额">
+            <select class="form-select" id="transferUnit" style="max-width: 100px;">
+              <option value="wei">Wei</option>
+              <option value="gwei">Gwei</option>
+              <option value="ether" selected>ETH</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="transferBtn" data-address="${address}">转账</button>
+      </form>
+    </div>
+  </div>
+</div>
+`}
 
         ${account.code && account.code !== '0x' ? `
         <div class="col-12 mb-4">
@@ -209,6 +234,111 @@ AccountView.init = () => {
         .catch(err => showToast('Error', '复制失败: ' + err));
     });
   });
+  
+  // 处理转账表单
+  const transferForm = document.getElementById('transferForm');
+  if (transferForm) {
+    transferForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // 获取表单数据
+      const targetAddress = transferForm.querySelector('#transferBtn').getAttribute('data-address');
+      const amount = document.getElementById('transferAmount').value;
+      const unit = document.getElementById('transferUnit').value;
+      
+      // 将金额转换为wei
+      let valueInWei;
+      switch(unit) {
+        case 'wei':
+          valueInWei = amount;
+          break;
+        case 'gwei':
+          valueInWei = amount * 1e9;
+          break;
+        case 'ether':
+          valueInWei = amount * 1e18;
+          break;
+        default:
+          valueInWei = amount * 1e18; // 默认使用ETH
+      }
+      
+      // 转换为十六进制
+      const valueInHex = '0x' + parseInt(valueInWei).toString(16);
+      
+      // 获取当前签名者地址
+      const fromAddress = currentSigner();
+      
+      if (!fromAddress) {
+        showToast('Error', '请先连接钱包');
+        return;
+      }
+      
+      // 创建确认对话框
+      const confirmModal = `
+        <div class="modal fade" id="transferConfirmModal" tabindex="-1" aria-labelledby="transferConfirmModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="transferConfirmModalLabel">确认转账</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>您即将从账户 <strong>${shortenAddress(fromAddress)}</strong> 转账到:</p>
+                <p>接收地址: <strong>${shortenAddress(targetAddress)}</strong></p>
+                <p>金额: <strong>${amount} ${unit}</strong></p>
+                <p>十六进制Wei值: <strong>${valueInHex}</strong></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmTransferBtn">确认转账</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 添加模态框到DOM
+      document.body.insertAdjacentHTML('beforeend', confirmModal);
+      
+      // 显示模态框
+      const modal = new bootstrap.Modal(document.getElementById('transferConfirmModal'));
+      modal.show();
+      
+      // 监听确认按钮
+      document.getElementById('confirmTransferBtn').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/transfer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: fromAddress,
+              to: targetAddress,
+              amount: valueInHex, // 使用十六进制wei值
+              unit: 'hex' // 标识单位为十六进制
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            modal.hide();
+            showToast('Success', '转账成功！');
+            // 移除模态框
+            document.getElementById('transferConfirmModal').remove();
+            // 刷新页面
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            showToast('Error', `转账失败: ${result.error || '未知错误'}`);
+          }
+        } catch (error) {
+          console.error('转账出错:', error);
+          showToast('Error', `转账出错: ${error.message}`);
+        }
+      });
+    });
+  }
   
   // 高亮代码
   document.querySelectorAll('pre code').forEach((block) => {

@@ -218,6 +218,46 @@ async function searchAccountTransactions(provider, blockNum, batchSize, accountI
 
 
 
+//=============================================================== 转账功能
+async function sendTransaction(provider, from, to, amount) {
+  try {
+    // 构建交易对象
+    const transaction = {
+      to: to,
+      value: amount,
+      gasLimit: 21000, // 标准转账 gas 限制
+    };
+
+    // 发送交易 - 使用JsonRpcProvider的send方法
+    // 添加from字段到交易对象
+    transaction.from = from;
+    // 使用十六进制表示gas
+    transaction.gas = "0x5208"; // 21000 in hex
+    delete transaction.gasLimit;
+    const txHash = await provider.send("eth_sendTransaction", [transaction]);
+    
+    // 等待交易被确认
+    // 注意：需要等待一段时间让交易被打包
+    let receipt = null;
+    let attempts = 0;
+    while (!receipt && attempts < 10) {
+      receipt = await provider.getTransactionReceipt(txHash);
+      if (!receipt) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+        attempts++;
+      }
+    }
+
+    return {
+      transactionHash: txHash,
+      receipt: receipt ? handleResult(receipt) : { status: "pending" }
+    };
+  } catch (error) {
+    console.error('Error sending transaction:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   getBlockList,
   getBlockById,
@@ -226,7 +266,6 @@ module.exports = {
   searchAccounts,
   listAccounts,
   getSigners,
+  sendTransaction,
   searchAccountTransactions
 };
-
-
