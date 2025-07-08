@@ -357,26 +357,38 @@ AccountView.init = () => {
           const data = await response.json();
           const txData = data.txData;
 
-          // 第二步：使用获取到的txData进行钱包签名
-          const signedTx = await window.ethereum.request({
-            method: 'eth_signTransaction',
+          // 使用MetaMask直接发送交易
+          // MetaMask会处理签名并发送交易
+          const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
             params: [txData]
           });
 
-          // 第三步：将签名后的交易发送回后端
-          const result = await api.post('/wallet_transfer', {
-            signedTx,
-            from: userWalletAddress,
-            to: recipientAddress
-          });
+          console.log('Transaction sent with hash:', txHash);
           
+          // 显示交易哈希并等待交易确认
+          // 不需要发送回后端，因为交易已经被MetaMask直接发送到网络
+          const result = {
+            txHash: txHash,
+            from: fromAddress,
+            to: targetAddress
+          };
+
           // 如果成功，显示成功消息
           modal.hide();
-          showToast('Success', '转账已发送！交易哈希: ' + result.data.transactionHash);
-          
+          showToast('Success', '转账已发送！交易哈希: ' + result.transactionHash);
+
           // 显示交易结果
           console.log('交易结果:', result);
-          
+
+          /*
+          MetaMask 实际上不支持仅签名交易的 API，而是提供了直接签名并发送交易的功能。
+          这样用户只需在 MetaMask 弹窗中确认交易即可，无需额外的步骤。
+
+          MetaMask 将负责处理签名和将交易广播到区块链网络，您的前端代码只需处理交易哈希
+          和用户界面更新即可。
+          */
+
           // 刷新页面
           setTimeout(() => window.location.reload(), 1500);
 
