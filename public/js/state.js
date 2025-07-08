@@ -5,10 +5,14 @@
 
 // 全局状态对象
 const globalState = {
-  // 当前选中的signer
-  signer: null,
+
+  currentSigner: null,
   // 缓存的signer列表
-  signers: [],
+  hardhatAccounts: [],
+  // 用户钱包账户列表
+  walletAccounts: [],
+  // 当前使用的signer类型
+  signerType: 'hardhat',
   
   
   // 缓存的区块数据
@@ -35,8 +39,19 @@ function initGlobalState() {
     }
     
     // 确保从localStorage中恢复signer
-    if (!globalState.signer) {
-      globalState.signer = localStorage.getItem('currentSigner') || null;
+    if (!globalState.currentSigner) {
+      globalState.currentSigner = localStorage.getItem('currentSigner') || null;
+    }
+    
+    // 从localStorage恢复signerType
+    if (!globalState.signerType) {
+      globalState.signerType = localStorage.getItem('signerType') || 'hardhat';
+    }
+    
+    // 从localStorage恢复walletAccounts
+    const savedWalletAccounts = localStorage.getItem('walletAccounts');
+    if (savedWalletAccounts && (!globalState.walletAccounts || globalState.walletAccounts.length === 0)) {
+      globalState.walletAccounts = JSON.parse(savedWalletAccounts);
     }
     
     // 初始化设置
@@ -60,9 +75,9 @@ function saveGlobalState() {
  * @param {string|null} newSigner - 新的signer地址
  * @returns {string|null} 当前signer地址
  */
-export function currentSigner(newSigner) {
+export function currentSigner(newSigner, type) {
   if (newSigner !== undefined) {
-    globalState.signer = newSigner;
+    globalState.currentSigner = newSigner;
     
     // 同时更新localStorage中的currentSigner
     if (newSigner) {
@@ -71,23 +86,17 @@ export function currentSigner(newSigner) {
       localStorage.removeItem('currentSigner');
     }
     
+    // 如果提供了type，更新signerType
+    if (type !== undefined) {
+      globalState.signerType = type;
+      localStorage.setItem('signerType', type);
+    }
+    
     saveGlobalState();
   }
-  return globalState.signer;
+  return globalState.currentSigner;
 }
 
-/**
- * 缓存或获取signers列表
- * @param {array|null} data - signers数组
- * @returns {array} 缓存的signers列表
- */
-export function cachedSigners(data) {
-  if (data !== undefined) {
-    globalState.signers = data;
-    saveGlobalState();
-  }
-  return globalState.signers;
-}
 
 // ================================================= 处理区块缓存
 
@@ -123,17 +132,82 @@ export function clearCache(cacheType = null) {
     globalState.blockDetails = {};
     globalState.transactionDetails = {};
     globalState.accountCache = {};
-    globalState.signers = [];
+    globalState.哈人的 = [];
+    globalState.walletAccounts = [];
+    localStorage.removeItem('walletAccounts');
   } else if (cacheType === 'blocks') {
     globalState.blockCache = {};
   } else if (cacheType === 'signers') {
-    globalState.signers = [];
+    globalState.hardhatAccounts = [];
+  } else if (cacheType === 'wallet') {
+    globalState.walletAccounts = [];
+    localStorage.removeItem('walletAccounts');
   }
   
   saveGlobalState();
 }
 
 // 自动初始化全局状态
+/**
+ * 获取当前signer类型
+ * @returns {string} 当前signer类型
+ */
+export function getSignerType() {
+  return globalState.signerType;
+}
+
+/**
+ * 获取钱包账户列表
+ * @returns {array} 钱包账户列表
+ */
+export function getWalletAccounts() {
+  return globalState.walletAccounts || [];
+}
+
+/**
+ * 添加新钱包账户
+ * @param {string} address - 要添加的钱包地址
+ * @returns {array} 更新后的钱包账户列表
+ */
+export function addWalletAccount(address) {
+  if (!address) return globalState.walletAccounts;
+  
+  // 确保walletAccounts是数组
+  if (!Array.isArray(globalState.walletAccounts)) {
+    globalState.walletAccounts = [];
+  }
+  
+  // 检查地址是否已存在
+  if (!globalState.walletAccounts.includes(address)) {
+    globalState.walletAccounts.push(address);
+    
+    // 保存到localStorage
+    localStorage.setItem('walletAccounts', JSON.stringify(globalState.walletAccounts));
+    saveGlobalState();
+  }
+  
+  return globalState.walletAccounts;
+}
+
+/**
+ * 移除钱包账户
+ * @param {string} address - 要移除的钱包地址
+ * @returns {array} 更新后的钱包账户列表
+ */
+export function removeWalletAccount(address) {
+  if (!address || !Array.isArray(globalState.walletAccounts)) {
+    return globalState.walletAccounts || [];
+  }
+  
+  globalState.walletAccounts = globalState.walletAccounts.filter(acc => acc !== address);
+  
+  // 保存到localStorage
+  localStorage.setItem('walletAccounts', JSON.stringify(globalState.walletAccounts));
+  saveGlobalState();
+  
+  return globalState.walletAccounts;
+}
+
 initGlobalState();
 
 // 监听存储事件

@@ -39,6 +39,11 @@ export function shortenAddress(address) {
   return address.slice(0, 6) + '...' + address.slice(-4);
 }
 
+export function longerAddress(address) {
+  if (!address) return '';
+  return address;
+}
+
 /**
  * 格式化以太币数量为可读形式
  * @param {string} wei - 以Wei为单位的数量

@@ -48,11 +48,9 @@
         <div class="ms-auto d-flex align-items-center">
           <div class="me-3">
             <div class="input-group">
-              <label class="input-group-text" for="signerSelect">Signer:</label>
-              <select class="form-select form-select-sm" id="signerSelect" style="min-width: 200px;">
-                <option value="">加载中...</option>
-              </select>
-              <button class="btn btn-sm btn-outline-light" id="addSigner" title="新增Signer地址"><i class="bi bi-plus-lg"></i>新增</button>
+              <label class="input-group-text">Signer:</label>
+              <span class="form-control form-control-sm text-truncate" id="currentSignerAddress" style="min-width: 200px;">加载中...</span>
+              <button class="btn btn-sm btn-outline-light" id="switchSigner" title="切换Signer地址">切换</button>
             </div>
           </div>
           
