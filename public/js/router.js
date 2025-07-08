@@ -8,7 +8,7 @@
 const routes = {
   '/': { view: () => import('./views/index.js').then(m => m.default) },
   '/block': { view: () => import('./views/block.js').then(m => m.default) },
-  '/tx': { view: () => import('./views/transaction.js').then(m => m.default) },
+  '/transaction': { view: () => import('./views/transaction.js').then(m => m.default) },
   '/account': { 
     view: () => {
       const params = new URLSearchParams(window.location.search);
@@ -78,7 +78,7 @@ class Router {
       this.navigateTo(`/account?address=${query}`);
     } else if (/^0x[a-fA-F0-9]{64}$/.test(query)) {
       // 交易哈希格式
-      this.navigateTo(`/tx?hash=${query}`);
+      this.navigateTo(`/transaction?hash=${query}`);
     } else if (/^\d+$/.test(query)) {
       // 区块号格式
       this.navigateTo(`/block?number=${query}`);

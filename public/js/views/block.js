@@ -184,7 +184,7 @@ const renderBlockDetails = async (blockHash) => {
                   <tbody>
                     ${block.txInfo.length > 0 ? block.txInfo.map(tx => `
                       <tr>
-                        <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                        <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
                         <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : 'Contract Creation'}</td>
                         <td>${tx.value ? tx.value + ' ETH' : '0 ETH'}</td>

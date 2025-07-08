@@ -7,7 +7,7 @@ const router = express.Router();
 
 // 引入各个模块的路由
 const blockRoutes = require('./routes/block');
-const txRoutes = require('./routes/tx');
+const transactionRoutes = require('./routes/transaction');
 const accountRoutes = require('./routes/account');
 const contractRoutes = require('./routes/contract');
 const networkRoutes = require('./routes/network');
@@ -23,7 +23,7 @@ router.use((req, res, next) => {
 
 // 注册路由
 router.use('/api/block', blockRoutes);
-router.use('/api/tx', txRoutes);
+router.use('/api/transaction', transactionRoutes);
 router.use('/api/account', accountRoutes);
 router.use('/api/contract', contractRoutes);
 router.use('/api/network', networkRoutes);

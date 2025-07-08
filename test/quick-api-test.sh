@@ -37,8 +37,8 @@ test_get_endpoint "/contract" "Contract List"
 test_get_endpoint "/contract/Lock" "Contract Details (Example Contract: Lock)"
 
 # Test Transaction Endpoints
-test_get_endpoint "/tx" "Transaction List"
-test_get_endpoint "/tx/0x733c0f05edf8cfacd5c36a5d78472902947e07815dc3fb4d591a5211e40e55f4" "Transaction Details (Example Hash)"
+test_get_endpoint "/transaction" "Transaction List"
+test_get_endpoint "/transaction/0x733c0f05edf8cfacd5c36a5d78472902947e07815dc3fb4d591a5211e40e55f4" "Transaction Details (Example Hash)"
 
 echo "\\nAPI tests completed\\n"
 

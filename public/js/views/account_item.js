@@ -120,7 +120,7 @@ const AccountItemView = async (address) => {
                   <tbody>
                     ${transactions && transactions.length > 0 ? transactions.map(tx => `
                       <tr>
-                        <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                        <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td>${tx.from.toLowerCase() === address.toLowerCase() ? '发出' : '接收'}</td>
                         <td>
                           ${tx.from.toLowerCase() === address.toLowerCase() ?

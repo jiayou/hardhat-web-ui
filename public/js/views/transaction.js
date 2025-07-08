@@ -15,8 +15,8 @@ const TransactionView = async () => {
   // 显示最近交易列表
   if (!txHash) {
 
-    // fetch /api/tx?blockNum=&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber
-    const response = await fetch('/api/tx?batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber');
+    // fetch /api/transaction?blockNum=&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber
+    const response = await fetch('/api/transaction?batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber');
     const result = await response.json();
 
     // { nextBlock: 13, data: [[...]]}
@@ -61,7 +61,7 @@ const TransactionView = async () => {
                 <tbody>
                   ${flattenData.map(tx => `
                     <tr>
-                      <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                      <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                       <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
                       <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
                       <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
@@ -85,7 +85,7 @@ const TransactionView = async () => {
   }
 
   try {
-    const response = await fetch(`/api/tx/${txHash}`);
+    const response = await fetch(`/api/transaction/${txHash}`);
     const data = await response.json();
 
     if (!data.transaction) {
@@ -214,7 +214,7 @@ TransactionView.init = () => {
       e.preventDefault();
       const txHash = document.getElementById('txHashInput').value.trim();
       if (txHash) {
-        window.location.href = `/tx?hash=${txHash}`;
+        window.location.href = `/transaction?hash=${txHash}`;
       }
     });
   }
@@ -235,7 +235,7 @@ TransactionView.init = () => {
       const nextBlock = e.target.getAttribute('data-next-block');
       if (nextBlock) {
         try {
-          const response = await fetch(`/api/tx?blockNum=${nextBlock}&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber`);
+          const response = await fetch(`/api/transaction?blockNum=${nextBlock}&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber`);
           const result = await response.json();
           
           if (result.data && result.data.length > 0) {
@@ -246,7 +246,7 @@ TransactionView.init = () => {
             flattenData.forEach(tx => {
               const row = document.createElement('tr');
               row.innerHTML = `
-                <td><a href="/tx?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
+                <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                 <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
                 <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
                 <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
