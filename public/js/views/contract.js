@@ -4,11 +4,13 @@
 
 import { showToast, shortenAddress } from '../utils.js';
 import { fetchContracts, fetchContractDetails, deployContract, callContractFunction } from '../api.js';
+import { renderContractInfo, adjustTextareaHeights, initContractInfoView } from './contract_info.js';
+import { renderDeployForm, handleDeployContract, initContractDeployView } from './contract_deploy.js';
+import { loadContractInstance, initContractCallView, getContractInstances } from './contract_call.js';
+import { renderContractSource, initContractSourceView } from './contract_source.js';
 
 // 当前选中的合约
 let currentContract = null;
-// 合约实例缓存
-let contractInstances = {};
 
 /**
  * 渲染合约视图
@@ -135,58 +137,6 @@ const ContractView = async () => {
 };
 
 /**
- * 创建函数卡片UI
- * @param {Object} fn - 函数ABI对象
- * @param {number} index - 函数索引
- * @param {boolean} isRead - 是否为读取函数
- * @returns {string} 函数卡片HTML
- */
-function createFunctionCard(fn, index, isRead) {
-  const id = `${isRead ? 'read' : 'write'}-fn-${index}`;
-  const payable = fn.stateMutability === 'payable';
-
-  return `
-    <div class="card function-card">
-      <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-          <span>${fn.name}</span>
-          ${payable ? '<span class="badge bg-warning">Payable</span>' : ''}
-        </div>
-      </div>
-      <div class="card-body">
-        <form class="function-form" id="form-${id}" data-fn-name="${fn.name}" data-fn-payable="${payable}">
-          ${fn.inputs.length > 0 ? fn.inputs.map((input, i) => `
-            <div class="function-param">
-              <label class="form-label">${input.name || 'param' + i} (${input.type})</label>
-              <input type="text" class="form-control function-input" data-type="${input.type}" placeholder="${input.type}">
-            </div>
-          `).join('') : '<p class="text-muted small mb-3">No parameters required</p>'}
-          
-          ${payable ? `
-            <div class="function-param">
-              <label class="form-label">Value (ETH)</label>
-              <input type="text" class="form-control function-value" placeholder="0">
-            </div>
-          ` : ''}
-          
-          <button type="submit" class="btn btn-sm ${isRead ? 'btn-outline-primary' : 'btn-outline-warning'} call-function-btn">
-            ${isRead ? '调用' : '发送'}
-          </button>
-          
-          <div class="function-result mt-3" style="display: none;">
-            <div class="d-flex justify-content-between">
-              <h6>结果:</h6>
-              <button type="button" class="btn-close clear-result-btn" aria-label="Close"></button>
-            </div>
-            <pre class="mt-2"></pre>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-}
-
-/**
  * 加载合约详情
  * @param {string} contractName - 合约名称
  */
@@ -210,92 +160,15 @@ async function loadContractDetails(contractName) {
     if (data.contract) {
       currentContract = data.contract;
 
-      // 显示ABI
-      document.getElementById('contractAbi').textContent = JSON.stringify(currentContract.abi, null, 2);
-      // 显示字节码
-      document.getElementById('contractBytecode').textContent = currentContract.bytecode;
-      
-      // 根据窗口大小计算textarea高度
-      function adjustByteCodeHeight() {
-        const windowHeight = window.innerHeight;
-        const bytecodeTextarea = document.getElementById('contractBytecode');
-        if (bytecodeTextarea) {
-          // 计算高度为窗口高度的30%，最小100px
-          const newHeight = Math.max(Math.floor(windowHeight * 0.4), 100);
-          bytecodeTextarea.style.height = newHeight + 'px';
-        }
-      }
-      
-      // 初次调整高度
-      adjustByteCodeHeight();
-      
-      // 监听窗口大小变化
-      window.addEventListener('resize', adjustByteCodeHeight);
-      // 根据窗口大小计算ABI textarea高度
-      function adjustAbiHeight() {
-        const windowHeight = window.innerHeight;
-        const abiTextarea = document.getElementById('contractAbi');
-        if (abiTextarea) {
-          // 计算高度为窗口高度的70%，最小150px
-          const newHeight = Math.max(Math.floor(windowHeight * 0.65), 150);
-          abiTextarea.style.height = newHeight + 'px';
-        }
-      }
-      
-      // 初次调整ABI高度
-      adjustAbiHeight();
-      
-      // 监听窗口大小变化，同时更新ABI高度
-      window.removeEventListener('resize', adjustByteCodeHeight);
-      window.addEventListener('resize', function() {
-        adjustByteCodeHeight();
-        adjustAbiHeight();
-      });
-
-      // 显示合约信息
-      const info = [
-        ['Name', contractName],
-        ['Bytecode Size', (currentContract.bytecode.length / 2 - 1) + ' bytes'],
-        ['Functions', currentContract.abi.filter(item => item.type === 'function').length],
-        ['Events', currentContract.abi.filter(item => item.type === 'event').length],
-      ];
-
-      document.getElementById('contractDetails-info').innerHTML = info.map(([key, value]) =>
-        `<tr><th>${key}</th><td>${value}</td></tr>`
-      ).join('');
-
-      // 显示构造函数参数
-      const constructorParams = document.getElementById('constructorParams');
-      const constructor = currentContract.abi.find(item => item.type === 'constructor');
-      
-      if (constructor && constructor.inputs.length > 0) {
-        constructorParams.innerHTML = '<h6 class="mb-3">构造函数参数:</h6>' +
-          constructor.inputs.map((input, index) => `
-            <div class="mb-3">
-              <label class="form-label">${input.name || 'param' + index} (${input.type})</label>
-              <input type="text" class="form-control constructor-param" data-type="${input.type}" placeholder="Enter ${input.type}">
-            </div>
-          `).join('');
-      } else {
-        constructorParams.innerHTML = '<p class="text-muted">无需构造函数参数</p>';
-      }
+      // 渲染各个模块
+      renderContractInfo(currentContract, contractName);
+      renderDeployForm(currentContract);
+      renderContractSource(currentContract);
 
       // 清空交互区域
       document.getElementById('contractAddress').value = '';
       document.getElementById('readFunctions').innerHTML = '<p class="text-center text-muted">请先加载合约</p>';
       document.getElementById('writeFunctions').innerHTML = '<p class="text-center text-muted">请先加载合约</p>';
-
-      // 显示合约源代码
-      const contractSource = document.getElementById('contractSource');
-      if (currentContract.source) {
-        contractSource.textContent = currentContract.source;
-      } else {
-        contractSource.textContent = '// Source code not available';
-      }
-      
-      if (typeof hljs !== 'undefined') {
-        hljs.highlightElement(contractSource);
-      }
     }
   } catch (error) {
     console.error('Error loading contract details:', error);
@@ -304,223 +177,19 @@ async function loadContractDetails(contractName) {
 }
 
 /**
- * 部署合约
+ * 部署成功后的回调
+ * @param {string} address - 部署的合约地址
  */
-async function handleDeployContract() {
-  if (!currentContract) return;
+function onDeploySuccess(address) {
+  // 自动填充合约地址到交互标签页
+  document.getElementById('contractAddress').value = address;
 
-  const args = [];
-  const constructor = currentContract.abi.find(item => item.type === 'constructor');
+  // 切换到交互标签页
+  const interactTab = document.getElementById('interact-tab');
+  bootstrap.Tab.getOrCreateInstance(interactTab).show();
 
-  if (constructor && constructor.inputs.length > 0) {
-    const paramInputs = document.querySelectorAll('.constructor-param');
-    if (paramInputs.length !== constructor.inputs.length) {
-      showToast('Error', 'Invalid constructor parameters');
-      return;
-    }
-
-    for (let i = 0; i < paramInputs.length; i++) {
-      const value = paramInputs[i].value.trim();
-      if (!value && !constructor.inputs[i].name.includes('optional')) {
-        showToast('Error', `Parameter ${constructor.inputs[i].name || i} is required`);
-        return;
-      }
-      args.push(value);
-    }
-  }
-
-  try {
-    const deployBtn = document.getElementById('deployBtn');
-    const deployResult = document.getElementById('deployResult');
-    
-    deployBtn.disabled = true;
-    deployBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 部署中...';
-
-    const data = await deployContract(currentContract.contractName, args);
-
-    if (data.success && data.address) {
-      deployResult.innerHTML = `
-        <div class="alert alert-success">
-          <h5>部署成功!</h5>
-          <p>合约地址: <strong>${data.address}</strong></p>
-          <button class="btn btn-sm btn-outline-primary copy-btn" data-address="${data.address}">复制地址</button>
-        </div>
-      `;
-
-      // 自动填充合约地址到交互标签页
-      document.getElementById('contractAddress').value = data.address;
-
-      // 切换到交互标签页
-      const interactTab = document.getElementById('interact-tab');
-      bootstrap.Tab.getOrCreateInstance(interactTab).show();
-
-      // 加载合约实例
-      loadContractInstance(data.address);
-      
-      // 设置复制按钮点击事件
-      document.querySelector('.copy-btn').addEventListener('click', function() {
-        navigator.clipboard.writeText(this.getAttribute('data-address'));
-        showToast('Success', '合约地址已复制到剪贴板');
-      });
-    } else {
-      deployResult.innerHTML = `
-        <div class="alert alert-danger">
-          <h5>部署失败</h5>
-          <p>${data.error || '未知错误'}</p>
-          ${data.details ? `<pre class="mt-2">${data.details}</pre>` : ''}
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error('Error deploying contract:', error);
-    document.getElementById('deployResult').innerHTML = `
-      <div class="alert alert-danger">
-        <h5>部署失败</h5>
-        <p>${error.message}</p>
-      </div>
-    `;
-  } finally {
-    const deployBtn = document.getElementById('deployBtn');
-    deployBtn.disabled = false;
-    deployBtn.textContent = '部署合约';
-  }
-}
-
-/**
- * 加载合约实例
- * @param {string} address - 合约地址
- */
-async function loadContractInstance(address) {
-  if (!currentContract || !address) return;
-
-  try {
-    // 区分读取和写入函数
-    const readFns = currentContract.abi.filter(item =>
-      item.type === 'function' &&
-      (item.stateMutability === 'view' || item.stateMutability === 'pure')
-    );
-
-    const writeFns = currentContract.abi.filter(item =>
-      item.type === 'function' &&
-      item.stateMutability !== 'view' &&
-      item.stateMutability !== 'pure'
-    );
-
-    // 显示读取函数
-    const readFunctions = document.getElementById('readFunctions');
-    if (readFns.length > 0) {
-      readFunctions.innerHTML = readFns.map((fn, index) => createFunctionCard(fn, index, true)).join('');
-    } else {
-      readFunctions.innerHTML = '<p class="text-center text-muted">无可用读取函数</p>';
-    }
-
-    // 显示写入函数
-    const writeFunctions = document.getElementById('writeFunctions');
-    if (writeFns.length > 0) {
-      writeFunctions.innerHTML = writeFns.map((fn, index) => createFunctionCard(fn, index, false)).join('');
-    } else {
-      writeFunctions.innerHTML = '<p class="text-center text-muted">无可用写入函数</p>';
-    }
-
-    // 保存合约实例
-    contractInstances[address] = {
-      name: currentContract.contractName,
-      address: address
-    };
-
-    // 设置函数调用事件
-    document.querySelectorAll('.function-form').forEach(form => {
-      form.addEventListener('submit', handleFunctionCall);
-    });
-    
-    // 设置清除结果按钮
-    document.querySelectorAll('.clear-result-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const resultDiv = this.closest('.function-result');
-        resultDiv.style.display = 'none';
-        resultDiv.querySelector('pre').textContent = '';
-      });
-    });
-  } catch (error) {
-    console.error('Error loading contract instance:', error);
-    showToast('Error', 'Failed to load contract instance: ' + error.message);
-  }
-}
-
-/**
- * 处理函数调用
- * @param {Event} e - 表单提交事件
- */
-async function handleFunctionCall(e) {
-  e.preventDefault();
-  const form = e.target;
-  const functionName = form.dataset.fnName;
-  const isPaayable = form.dataset.fnPayable === 'true';
-  const address = document.getElementById('contractAddress').value;
-  
-  if (!address || !functionName || !currentContract) {
-    showToast('Error', 'Missing contract address or function name');
-    return;
-  }
-  
-  const args = [];
-  const inputs = form.querySelectorAll('.function-input');
-  inputs.forEach(input => {
-    args.push(input.value.trim());
-  });
-  
-  const options = {};
-  if (isPaayable) {
-    const valueInput = form.querySelector('.function-value');
-    if (valueInput && valueInput.value.trim()) {
-      options.value = valueInput.value.trim();
-    }
-  }
-  
-  const resultElement = form.querySelector('.function-result');
-  const resultPre = resultElement.querySelector('pre');
-  
-  try {
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
-    
-    const data = await callContractFunction(
-      address,
-      currentContract.contractName,
-      functionName,
-      args,
-      options
-    );
-    
-    resultElement.style.display = 'block';
-    
-    if (data.success) {
-      resultPre.textContent = typeof data.result === 'object' ?
-        JSON.stringify(data.result, null, 2) : data.result;
-      resultElement.classList.remove('text-danger');
-      resultElement.classList.add('text-success');
-    } else {
-      resultPre.textContent = data.error || '未知错误';
-      resultElement.classList.remove('text-success');
-      resultElement.classList.add('text-danger');
-    }
-    
-    if (window.hljs) {
-      window.hljs.highlightElement(resultPre);
-    }
-  } catch (error) {
-    console.error('Error calling function:', error);
-    resultElement.style.display = 'block';
-    resultPre.textContent = error.message;
-    resultElement.classList.remove('text-success');
-    resultElement.classList.add('text-danger');
-  } finally {
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = false;
-    submitBtn.textContent = submitBtn.classList.contains('btn-outline-primary') ? '调用' : '发送';
-  }
+  // 加载合约实例
+  loadContractInstance(address, currentContract);
 }
 
 /**
@@ -531,32 +200,12 @@ ContractView.init = () => {
   document.querySelectorAll('.contract-list .list-group-item').forEach(item => {
     item.addEventListener('click', () => loadContractDetails(item.dataset.contract));
   });
-  
-  // 绑定部署按钮事件
-  const deployBtn = document.getElementById('deployBtn');
-  if (deployBtn) {
-    deployBtn.addEventListener('click', handleDeployContract);
-  }
-  
-  // 绑定加载合约按钮事件
-  const loadContractBtn = document.getElementById('loadContractBtn');
-  if (loadContractBtn) {
-    loadContractBtn.addEventListener('click', () => {
-      const address = document.getElementById('contractAddress').value.trim();
-      if (address) {
-        loadContractInstance(address);
-      } else {
-        showToast('Error', 'Please enter a contract address');
-      }
-    });
-  }
-  
-  // 高亮代码
-  document.querySelectorAll('pre code').forEach((block) => {
-    if (window.hljs) {
-      window.hljs.highlightElement(block);
-    }
-  });
+
+  // 初始化各个模块
+  initContractInfoView();
+  initContractDeployView(() => handleDeployContract(currentContract, onDeploySuccess));
+  initContractCallView(currentContract);
+  initContractSourceView();
 };
 
 // 导出默认视图函数
