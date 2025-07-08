@@ -7,11 +7,7 @@
 const globalState = {
 
   currentSigner: null, // 将会是一个 { address: "0x...", type: "hardhat" 或 "wallet" } 对象
-  // 缓存的signer列表
   hardhatAccounts: [],
-  // 用户钱包账户列表
-  walletAccounts: [],
-  
   
   // 缓存的区块数据
   blockCache: {
@@ -36,16 +32,9 @@ function initGlobalState() {
       Object.assign(globalState, parsedState);
     }
     
-    // 确保从localStorage中恢复signer
+    // 确保从 localStorage 中恢复 currentSigner
     if (!globalState.currentSigner) {
       globalState.currentSigner = localStorage.getItem('currentSigner') || null;
-    }
-    
-    
-    // 从localStorage恢复walletAccounts
-    const savedWalletAccounts = localStorage.getItem('walletAccounts');
-    if (savedWalletAccounts && (!globalState.walletAccounts || globalState.walletAccounts.length === 0)) {
-      globalState.walletAccounts = JSON.parse(savedWalletAccounts);
     }
     
     // 初始化设置
@@ -127,80 +116,13 @@ export function clearCache(cacheType = null) {
     globalState.blockDetails = {};
     globalState.transactionDetails = {};
     globalState.accountCache = {};
-    globalState.哈人的 = [];
-    globalState.walletAccounts = [];
-    localStorage.removeItem('walletAccounts');
   } else if (cacheType === 'blocks') {
     globalState.blockCache = {};
   } else if (cacheType === 'signers') {
     globalState.hardhatAccounts = [];
-  } else if (cacheType === 'wallet') {
-    globalState.walletAccounts = [];
-    localStorage.removeItem('walletAccounts');
   }
   
   saveGlobalState();
-}
-
-// 自动初始化全局状态
-/**
- * 获取当前signer类型
- * @returns {string} 当前signer类型
- */
-export function getSignerType() {
-  return globalState.currentSigner ? globalState.currentSigner.type : 'hardhat';
-}
-
-/**
- * 获取钱包账户列表
- * @returns {array} 钱包账户列表
- */
-export function getWalletAccounts() {
-  return globalState.walletAccounts || [];
-}
-
-/**
- * 添加新钱包账户
- * @param {string} address - 要添加的钱包地址
- * @returns {array} 更新后的钱包账户列表
- */
-export function addWalletAccount(address) {
-  if (!address) return globalState.walletAccounts;
-  
-  // 确保walletAccounts是数组
-  if (!Array.isArray(globalState.walletAccounts)) {
-    globalState.walletAccounts = [];
-  }
-  
-  // 检查地址是否已存在
-  if (!globalState.walletAccounts.includes(address)) {
-    globalState.walletAccounts.push(address);
-    
-    // 保存到localStorage
-    localStorage.setItem('walletAccounts', JSON.stringify(globalState.walletAccounts));
-    saveGlobalState();
-  }
-  
-  return globalState.walletAccounts;
-}
-
-/**
- * 移除钱包账户
- * @param {string} address - 要移除的钱包地址
- * @returns {array} 更新后的钱包账户列表
- */
-export function removeWalletAccount(address) {
-  if (!address || !Array.isArray(globalState.walletAccounts)) {
-    return globalState.walletAccounts || [];
-  }
-  
-  globalState.walletAccounts = globalState.walletAccounts.filter(acc => acc !== address);
-  
-  // 保存到localStorage
-  localStorage.setItem('walletAccounts', JSON.stringify(globalState.walletAccounts));
-  saveGlobalState();
-  
-  return globalState.walletAccounts;
 }
 
 initGlobalState();
