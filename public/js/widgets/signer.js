@@ -7,6 +7,54 @@ import {
   getWalletAccounts
 } from '../state.js';
 
+// 存储以太坊连接状态和已连接账户
+let ethereumAvailable = false;
+let connectedAccounts = [];
+
+/**
+ * 检查以太坊是否可用并获取已连接账户
+ * @returns {Promise<{available: boolean, accounts: Array<string>}>}
+ */
+async function checkEthereumConnection() {
+  const result = {
+    available: false,
+    accounts: []
+  };
+
+  // 检查window.ethereum是否存在
+  if (window.ethereum) {
+    result.available = true;
+    try {
+      // 尝试获取已连接的账户（不弹出钱包请求）
+      const accounts = await window.ethereum.request({
+        method: 'eth_accounts' // 使用eth_accounts而非eth_requestAccounts避免弹窗
+      });
+      
+      if (accounts && accounts.length > 0) {
+        result.accounts = accounts.map(addr => addr.toLowerCase());
+      }
+      
+      // 添加以太坊账户变化事件监听
+      window.ethereum.on('accountsChanged', (newAccounts) => {
+        console.log('MetaMask账户已变更:', newAccounts);
+        // 更新全局连接账户列表
+        connectedAccounts = newAccounts ? newAccounts.map(addr => addr.toLowerCase()) : [];
+        
+        // 如果对话框是打开的，需要刷新显示
+        const dialog = document.getElementById('signerDialog');
+        if (dialog && dialog.classList.contains('show')) {
+          // 重新渲染钱包列表
+          renderWalletAccountsList();
+        }
+      });
+    } catch (error) {
+      console.error('获取已连接账户失败:', error);
+    }
+  }
+
+  return result;
+}
+
 /**
  * 打开Signer选择对话框
  */
@@ -62,6 +110,13 @@ export function openSignerDialog() {
   // 初始化模态框
   const modal = new bootstrap.Modal(document.getElementById('signerDialog'));
   modal.show();
+  
+  // 检查以太坊连接状态
+  checkEthereumConnection().then(result => {
+    ethereumAvailable = result.available;
+    connectedAccounts = result.accounts;
+    console.log('以太坊可用:', ethereumAvailable, '已连接账户:', connectedAccounts);
+  });
 
   // 获取当前选中的signer和类型
   const selectedSigner = currentSigner();
@@ -269,6 +324,14 @@ export function openSignerDialog() {
  * @param {HTMLElement} walletRadioGroup - 钱包列表容器元素
  * @returns {HTMLElement} 创建的列表项DOM元素
  */
+/**
+ * 创建钱包账户列表项
+ * @param {string} address - 钱包地址
+ * @param {number} index - 索引号
+ * @param {boolean} checked - 是否选中
+ * @param {HTMLElement} walletRadioGroup - 钱包列表容器元素
+ * @returns {HTMLElement} 创建的列表项DOM元素
+ */
 function createWalletAccountItem(address, index, checked, walletRadioGroup) {
   const currentSelectedAddressDiv = document.getElementById('currentSelectedAddress');
 
@@ -286,11 +349,35 @@ function createWalletAccountItem(address, index, checked, walletRadioGroup) {
   radio.dataset.type = 'wallet';
   radio.checked = checked;
 
+  // 创建label和状态图标容器
+  const labelContainer = document.createElement('div');
+  labelContainer.className = 'd-flex align-items-center me-auto';
+  
   // 创建label
   const label = document.createElement('label');
-  label.className = 'form-check-label me-auto';
+  label.className = 'form-check-label';
   label.htmlFor = `wallet-${index}`;
   label.textContent = `钱包账户 ${address}`;
+  
+  // 添加连接状态图标
+  const statusIcon = document.createElement('span');
+  statusIcon.className = 'ms-2 badge';
+  
+  // 检查地址是否在已连接账户中
+  const isConnected = connectedAccounts.includes(address.toLowerCase());
+  
+  if (isConnected) {
+    statusIcon.className += ' bg-success';
+    statusIcon.title = '已连接';
+    statusIcon.innerHTML = '<i class="bi bi-link"></i>';
+  } else {
+    statusIcon.className += ' bg-secondary';
+    statusIcon.title = '未连接';
+    statusIcon.innerHTML = '<i class="bi bi-link-45deg"></i>';
+  }
+  
+  labelContainer.appendChild(label);
+  labelContainer.appendChild(statusIcon);
 
   // 添加label点击事件确保对应的radio能被选中
   label.addEventListener('click', function() {
@@ -324,51 +411,136 @@ function createWalletAccountItem(address, index, checked, walletRadioGroup) {
       }
   };
 
-  // 创建测试连接按钮
-  const testConnectBtn = document.createElement('button');
-  testConnectBtn.className = 'btn btn-sm btn-outline-primary ms-2';
-  testConnectBtn.innerHTML = '测试连接';
-  testConnectBtn.title = '测试与钱包的连接';
-  testConnectBtn.onclick = async function(e) {
+  // 创建连接/断开按钮（仅当window.ethereum可用时显示）
+  const connectBtn = document.createElement('button');
+  connectBtn.className = 'btn btn-sm ms-2';
+  connectBtn.style.display = ethereumAvailable ? 'inline-block' : 'none';
+  
+  updateConnectButtonState(connectBtn, isConnected);
+  
+  connectBtn.onclick = async function(e) {
       e.preventDefault(); // 防止触发radio选择
-      try {
-      // 显示加载状态
-      const originalText = testConnectBtn.innerHTML;
-      testConnectBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 连接中...';
-      testConnectBtn.disabled = true;
-
-      // 尝试连接MetaMask
-      if (!window.ethereum) {
-          throw new Error("MetaMask未安装或不可用");
-      }
-
-      // 请求用户连接账户
-      const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts'
-      });
-
-      if (!accounts || accounts.length === 0) {
-          throw new Error("没有连接到MetaMask账户");
-      }
-
-      // 验证连接的钱包地址与选择的地址是否匹配
-      const connectedAddress = accounts[0].toLowerCase();
-      const selectedAddress = address.toLowerCase();
-
-      if (connectedAddress === selectedAddress) {
-          showToast('连接成功', `成功连接到钱包地址: ${connectedAddress}`, 'success');
+      
+      // 获取当前按钮状态，判断是执行连接还是断开操作
+      const currentlyConnected = connectedAccounts.includes(address.toLowerCase());
+      
+      if (currentlyConnected) {
+          // 执行断开操作
+          await handleDisconnect(connectBtn, address);
       } else {
-          showToast('地址不匹配', `当前连接的钱包地址 (${connectedAddress}) 与选择的地址 (${selectedAddress}) 不符`, 'warning');
+          // 执行连接操作
+          await handleConnect(connectBtn, address);
       }
-      } catch (error) {
-      console.error('钱包连接测试失败:', error);
-      showToast('连接失败', error.message || '无法连接到钱包', 'danger');
-      } finally {
-      // 恢复按钮状态
-      testConnectBtn.innerHTML = '测试连接';
-      testConnectBtn.disabled = false;
+      
+      // 更新状态图标
+      const isNowConnected = connectedAccounts.includes(address.toLowerCase());
+      const statusIcon = labelContainer.querySelector('.badge');
+      
+      if (isNowConnected) {
+          statusIcon.className = 'ms-2 badge bg-success';
+          statusIcon.title = '已连接';
+          statusIcon.innerHTML = '<i class="bi bi-link"></i>';
+      } else {
+          statusIcon.className = 'ms-2 badge bg-secondary';
+          statusIcon.title = '未连接';
+          statusIcon.innerHTML = '<i class="bi bi-link-45deg"></i>';
       }
   };
+  
+  /**
+   * 处理连接钱包操作
+   * @param {HTMLElement} button - 连接按钮
+   * @param {string} walletAddress - 要连接的钱包地址
+   */
+  async function handleConnect(button, walletAddress) {
+      try {
+          // 显示加载状态
+          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 连接中...';
+          button.disabled = true;
+          button.classList.remove('btn-outline-primary');
+          button.classList.add('btn-outline-secondary');
+
+          // 尝试连接MetaMask
+          if (!window.ethereum) {
+              throw new Error("MetaMask未安装或不可用");
+          }
+
+          // 请求用户连接账户
+          const accounts = await window.ethereum.request({
+              method: 'eth_requestAccounts'
+          });
+
+          if (!accounts || accounts.length === 0) {
+              throw new Error("没有连接到MetaMask账户");
+          }
+          
+          // 更新已连接账户列表
+          connectedAccounts = accounts.map(acc => acc.toLowerCase());
+          
+          // 检查输入的钱包地址是否在已连接账户中
+          const targetAddress = walletAddress.toLowerCase();
+          const isTargetConnected = connectedAccounts.includes(targetAddress);
+          
+          if (isTargetConnected) {
+              showToast('连接成功', `成功连接到钱包地址: ${targetAddress}`, 'success');
+              updateConnectButtonState(button, true);
+          } else {
+              // 地址不在已连接列表中，显示警告
+              showToast('地址不匹配', `当前MetaMask中没有地址 ${targetAddress}，已连接账户: ${accounts.join(", ")}`, 'warning');
+              updateConnectButtonState(button, false);
+          }
+          
+      } catch (error) {
+          console.error('钱包连接失败:', error);
+          showToast('连接失败', error.message || '无法连接到钱包', 'danger');
+          updateConnectButtonState(button, false);
+      } finally {
+          button.disabled = false;
+      }
+  }
+  
+  /**
+   * 处理断开钱包连接操作
+   * @param {HTMLElement} button - 连接按钮
+   * @param {string} walletAddress - 要断开的钱包地址 
+   */
+  async function handleDisconnect(button, walletAddress) {
+      try {
+          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 断开中...';
+          button.disabled = true;
+          
+          // 目前MetaMask API不支持直接断开特定账户，我们只能在界面上反映这一变化
+          // 从连接列表中移除此地址
+          const addressLower = walletAddress.toLowerCase();
+          connectedAccounts = connectedAccounts.filter(addr => addr !== addressLower);
+          
+          showToast('已断开', `已从连接列表中移除钱包地址: ${addressLower}`, 'info');
+          updateConnectButtonState(button, false);
+          
+      } catch (error) {
+          console.error('断开钱包连接失败:', error);
+          showToast('断开失败', error.message || '无法断开钱包连接', 'danger');
+      } finally {
+          button.disabled = false;
+      }
+  }
+  
+  /**
+   * 更新连接按钮状态
+   * @param {HTMLElement} button - 连接按钮
+   * @param {boolean} isConnected - 是否已连接
+   */
+  function updateConnectButtonState(button, isConnected) {
+      if (isConnected) {
+          button.innerHTML = '断开连接';
+          button.title = '断开与此钱包地址的连接';
+          button.className = 'btn btn-sm btn-outline-danger ms-2';
+      } else {
+          button.innerHTML = '连接';
+          button.title = '连接到此钱包地址';
+          button.className = 'btn btn-sm btn-outline-primary ms-2';
+      }
+  }
 
   // 添加事件监听器更新当前选择的地址
   radio.addEventListener('change', function() {
@@ -385,13 +557,50 @@ function createWalletAccountItem(address, index, checked, walletRadioGroup) {
   }
 
   radioDiv.appendChild(radio);
-  radioDiv.appendChild(label);
+  radioDiv.appendChild(labelContainer);
   radioDiv.appendChild(deleteBtn);
-  radioDiv.appendChild(testConnectBtn);
+  radioDiv.appendChild(connectBtn);
 
   return radioDiv;
 }
 
+
+/**
+ * 重新渲染钱包账户列表
+ */
+function renderWalletAccountsList() {
+  // 获取钱包账户列表容器
+  const walletRadioGroup = document.getElementById('walletSignerRadioGroup');
+  if (!walletRadioGroup) return;
+  
+  // 清空当前列表
+  walletRadioGroup.innerHTML = '';
+  
+  // 获取钱包账户
+  const accounts = getWalletAccounts();
+  
+  // 获取当前选择的signer
+  const selectedSigner = currentSigner();
+  
+  if (accounts && accounts.length > 0) {
+    accounts.forEach((address, index) => {
+      // 判断是否是当前选中的地址
+      const isSelected = selectedSigner && 
+                        selectedSigner.type === 'wallet' && 
+                        selectedSigner.address.toLowerCase() === address.toLowerCase();
+      
+      // 创建钱包账户列表项
+      const accountItem = createWalletAccountItem(address, index, isSelected, walletRadioGroup);
+      walletRadioGroup.appendChild(accountItem);
+    });
+  } else {
+    // 如果没有钱包账户，显示提示信息
+    const emptyItem = document.createElement('div');
+    emptyItem.className = 'text-center text-muted p-3';
+    emptyItem.textContent = '没有保存的钱包账户';
+    walletRadioGroup.appendChild(emptyItem);
+  }
+}
 
 /**
  * 更新当前Signer显示
