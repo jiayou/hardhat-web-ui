@@ -4,6 +4,7 @@
 
 import { showToast } from '../utils.js';
 import { callContractFunction } from '../api.js';
+import { currentSigner } from '../state.js';
 
 // 合约实例缓存
 const contractInstances = {};
@@ -18,6 +19,11 @@ const contractInstances = {};
 function createFunctionCard(fn, index, isRead) {
   const id = `${isRead ? 'read' : 'write'}-fn-${index}`;
   const payable = fn.stateMutability === 'payable';
+  const signerType = currentSigner().type;
+
+  // 如果是写入函数且signer类型是wallet，使用红色按钮
+  const buttonClass = isRead ? 'btn-outline-primary' : 
+                    (signerType === 'wallet' ? 'btn-outline-danger' : 'btn-outline-warning');
 
   return `
     <div class="card function-card">
@@ -25,6 +31,7 @@ function createFunctionCard(fn, index, isRead) {
         <div class="d-flex justify-content-between align-items-center">
           <span>${fn.name}</span>
           ${payable ? '<span class="badge bg-warning">Payable</span>' : ''}
+          ${!isRead && signerType === 'wallet' ? '<span class="badge bg-danger">Wallet</span>' : ''}
         </div>
       </div>
       <div class="card-body">
@@ -43,8 +50,8 @@ function createFunctionCard(fn, index, isRead) {
             </div>
           ` : ''}
 
-          <button type="submit" class="btn btn-sm ${isRead ? 'btn-outline-primary' : 'btn-outline-warning'} call-function-btn">
-            ${isRead ? '调用' : '发送'}
+          <button type="submit" class="btn btn-sm ${buttonClass} call-function-btn" data-is-read="${isRead}">
+            ${isRead ? '调用' : (signerType === 'wallet' ? '使用钱包发送' : '发送')}
           </button>
 
           <div class="function-result mt-3" style="display: none;">
@@ -133,6 +140,8 @@ async function handleFunctionCall(e, contract) {
   const functionName = form.dataset.fnName;
   const isPaayable = form.dataset.fnPayable === 'true';
   const address = document.getElementById('contractAddress').value;
+  const isRead = form.querySelector('button[type="submit"]').dataset.isRead === "true";
+  const signer = currentSigner();
 
   if (!address || !functionName || !contract) {
     showToast('Error', 'Missing contract address or function name');
@@ -162,25 +171,74 @@ async function handleFunctionCall(e, contract) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
 
-    const data = await callContractFunction(
-      address,
-      contract.contractName,
-      functionName,
-      args,
-      options
-    );
-
-    resultElement.style.display = 'block';
-
-    if (data.success) {
-      resultPre.textContent = typeof data.result === 'object' ?
-        JSON.stringify(data.result, null, 2) : data.result;
-      resultElement.classList.remove('text-danger');
-      resultElement.classList.add('text-success');
+    // 如果不是读取函数且使用的是钱包类型的签名者
+    if (!isRead && signer.type === 'wallet') {
+      // 准备调用合约的交易数据
+      const contractABI = contract.abi;
+      const functionABI = contractABI.find(item => item.name === functionName);
+      
+      // 调用/api/prepare-call API处理编码和准备交易
+      const response = await fetch('/api/prepare-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: signer.address,
+          to: address,
+          contractABI,
+          functionName,
+          args,
+          value: options.value ? options.value : undefined
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to prepare transaction: ${response.statusText}`);
+      }
+      
+      const prepareData = await response.json();
+      
+      // 通过MetaMask发送交易
+      if (!window.ethereum) {
+        throw new Error('MetaMask或其他兼容钱包未安装');
+      }
+      
+      try {
+        // 发送交易
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [prepareData.txData],
+        });
+        
+        resultElement.style.display = 'block';
+        resultPre.textContent = `交易已提交，交易哈希: ${txHash}\n请等待交易确认。`;
+        resultElement.classList.remove('text-danger');
+        resultElement.classList.add('text-success');
+      } catch (walletError) {
+        console.error('钱包交易错误:', walletError);
+        throw new Error(`钱包交易失败: ${walletError.message}`);
+      }
     } else {
-      resultPre.textContent = data.error || '未知错误';
-      resultElement.classList.remove('text-success');
-      resultElement.classList.add('text-danger');
+      // 原有逻辑 - 直接通过API调用合约函数
+      const data = await callContractFunction(
+        address,
+        contract.contractName,
+        functionName,
+        args,
+        options
+      );
+
+      resultElement.style.display = 'block';
+
+      if (data.success) {
+        resultPre.textContent = typeof data.result === 'object' ?
+          JSON.stringify(data.result, null, 2) : data.result;
+        resultElement.classList.remove('text-danger');
+        resultElement.classList.add('text-success');
+      } else {
+        resultPre.textContent = data.error || '未知错误';
+        resultElement.classList.remove('text-success');
+        resultElement.classList.add('text-danger');
+      }
     }
 
     if (window.hljs) {
@@ -195,7 +253,11 @@ async function handleFunctionCall(e, contract) {
   } finally {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    submitBtn.textContent = submitBtn.classList.contains('btn-outline-primary') ? '调用' : '发送';
+    if (signer.type === 'wallet' && !isRead) {
+      submitBtn.textContent = '使用钱包发送';
+    } else {
+      submitBtn.textContent = isRead ? '调用' : '发送';
+    }
   }
 }
 

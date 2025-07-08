@@ -1,4 +1,5 @@
 // 为前端浏览器钱包准备数据。
+import { ethers } from 'ethers';
 /*
 调用方法：
 
@@ -141,11 +142,18 @@ async function isReadOnlyMethod(provider, to, data) {
     }
 }
 
+function encodeFunctionCall(abi, functionName, params) {
+    // 创建接口实例
+    const iface = new ethers.utils.Interface(abi);
+    // 编码函数调用
+    return iface.encodeFunctionData(functionName, params);
+}
+
 export default {
     prepareTansfer,
     prepareDeploy,
     prepareCall,
     isHardhatTestAccount,
-    isReadOnlyMethod
+    isReadOnlyMethod,
+    encodeFunctionCall
 }
-

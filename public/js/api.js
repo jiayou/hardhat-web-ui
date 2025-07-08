@@ -209,3 +209,36 @@ export async function fetchSigners() {
     throw error;
   }
 }
+
+/**
+ * 准备合约部署数据（用于钱包交易）
+ * @param {string} from - 发送者地址
+ * @param {string} contractName - 合约名称
+ * @param {string} bytecode - 合约字节码
+ * @param {Array} args - 构造函数参数
+ * @returns {Promise} 包含准备好的交易数据的Promise
+ */
+export async function prepareDeploy(from, contractName, bytecode, args) {
+  try {
+    const response = await fetch('/api/prepare-deploy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from,
+        contractName,
+        bytecode,
+        args
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error preparing deploy data:', error);
+    showToast('Error', 'Failed to prepare deploy data: ' + error.message);
+    throw error;
+  }
+}
