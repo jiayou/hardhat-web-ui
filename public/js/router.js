@@ -9,7 +9,21 @@ const routes = {
   '/': { view: () => import('./views/index.js').then(m => m.default) },
   '/block': { view: () => import('./views/block.js').then(m => m.default) },
   '/tx': { view: () => import('./views/transaction.js').then(m => m.default) },
-  '/account': { view: () => import('./views/account.js').then(m => m.default) },
+  '/account': { 
+    view: () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('address')) {
+        const address = params.get('address');
+        return import('./views/account_item.js').then(m => {
+          const viewFn = m.default;
+          // 返回一个新函数，确保无论参数如何，都会使用正确的地址
+          return (params) => viewFn(address);
+        });
+      } else {
+        return import('./views/account_list.js').then(m => m.default);
+      }
+    }
+  },
   '/contract': { view: () => import('./views/contract.js').then(m => m.default) },
   '/404': { view: () => import('./views/404.js').then(m => m.default) }
 };
@@ -88,6 +102,7 @@ class Router {
   async render() {
     const path = window.location.pathname;
     const route = routes[path] || routes['/404']; // 未找到的路由显示404页面
+    const params = new URLSearchParams(window.location.search);
 
     try {
       // 动态加载对应的视图组件
@@ -95,12 +110,16 @@ class Router {
       this.app.innerHTML = '<div class="text-center my-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
       
       // 渲染视图
-      const html = await viewFunction();
+      const html = await viewFunction(Object.fromEntries(params));
       this.app.innerHTML = html;
 
       // 执行视图相关的初始化脚本
       if (viewFunction.init) {
-        viewFunction.init();
+        if (path === '/account' && params.has('address')) {
+          viewFunction.init(params.get('address'));
+        } else {
+          viewFunction.init(Object.fromEntries(params));
+        }
       }
     } catch (error) {
       console.error('Error loading view:', error);

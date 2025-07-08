@@ -61,6 +61,9 @@ async function launchServer(hre, port) {
     });
   });
 
+  // 处理static路由
+  app.use('/static', express.static(path.join(__dirname, '../static')));
+
   // 确保前端路由都返回index.html
   app.get(/.*/, (req, res) => {
     console.log(req.path)
