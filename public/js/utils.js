@@ -57,3 +57,23 @@ export function formatEther(wei) {
   const decimalPart = remainder.toString().padStart(18, '0').slice(0, 6);
   return `${ether}.${decimalPart} ETH`;
 }
+
+
+
+export async function fetchConnectedWalletAccounts() {
+  if (!window.ethereum) return []
+
+  try {
+    const accounts = await window.ethereum.request({
+      method: 'eth_accounts'
+    });
+    console.log('已连接的钱包账户:', accounts);
+    if (accounts && accounts.length > 0) {
+      return accounts.map(addr => addr.toLowerCase());
+    }
+  } catch (error) {
+    console.error('获取已连接账户失败:', error);
+  }
+
+  return [];
+}

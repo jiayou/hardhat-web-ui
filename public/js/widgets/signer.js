@@ -1,5 +1,5 @@
 import { fetchSigners } from '../api.js';
-import { showToast, longerAddress, shortenAddress } from '../utils.js';
+import { showToast, longerAddress, shortenAddress,fetchConnectedWalletAccounts } from '../utils.js';
 import {
   currentSigner,
   addWalletAccount,
@@ -7,53 +7,9 @@ import {
   getWalletAccounts
 } from '../state.js';
 
-// 存储以太坊连接状态和已连接账户
-let ethereumAvailable = false;
+// 存储钱包连接状态和已连接账户
+let walletAvailable = true // window.ethereum ? true : false;
 let connectedAccounts = [];
-
-/**
- * 检查以太坊是否可用并获取已连接账户
- * @returns {Promise<{available: boolean, accounts: Array<string>}>}
- */
-async function checkEthereumConnection() {
-  const result = {
-    available: false,
-    accounts: []
-  };
-
-  // 检查window.ethereum是否存在
-  if (window.ethereum) {
-    result.available = true;
-    try {
-      // 尝试获取已连接的账户（不弹出钱包请求）
-      const accounts = await window.ethereum.request({
-        method: 'eth_accounts' // 使用eth_accounts而非eth_requestAccounts避免弹窗
-      });
-      
-      if (accounts && accounts.length > 0) {
-        result.accounts = accounts.map(addr => addr.toLowerCase());
-      }
-      
-      // 添加以太坊账户变化事件监听
-      window.ethereum.on('accountsChanged', (newAccounts) => {
-        console.log('MetaMask账户已变更:', newAccounts);
-        // 更新全局连接账户列表
-        connectedAccounts = newAccounts ? newAccounts.map(addr => addr.toLowerCase()) : [];
-        
-        // 如果对话框是打开的，需要刷新显示
-        const dialog = document.getElementById('signerDialog');
-        if (dialog && dialog.classList.contains('show')) {
-          // 重新渲染钱包列表
-          renderWalletAccountsList();
-        }
-      });
-    } catch (error) {
-      console.error('获取已连接账户失败:', error);
-    }
-  }
-
-  return result;
-}
 
 /**
  * 打开Signer选择对话框
@@ -110,13 +66,6 @@ export function openSignerDialog() {
   // 初始化模态框
   const modal = new bootstrap.Modal(document.getElementById('signerDialog'));
   modal.show();
-  
-  // 检查以太坊连接状态
-  checkEthereumConnection().then(result => {
-    ethereumAvailable = result.available;
-    connectedAccounts = result.accounts;
-    console.log('以太坊可用:', ethereumAvailable, '已连接账户:', connectedAccounts);
-  });
 
   // 获取当前选中的signer和类型
   const selectedSigner = currentSigner();
@@ -173,24 +122,12 @@ export function openSignerDialog() {
     showToast('获取Hardhat账户失败', error)
   });
 
-  // 获取并填充钱包账户
-  const walletRadioGroup = document.getElementById('walletSignerRadioGroup');
-  walletRadioGroup.innerHTML = ''; // 清空现有内容
-
-  const walletAccounts = getWalletAccounts ? getWalletAccounts() : [];
-  if (walletAccounts && walletAccounts.length > 0) {
-    walletAccounts.forEach((address, index) => {
-      const isChecked = signerAddress === address && currentType === 'wallet';
-      const radioDiv = createWalletAccountItem(address, index, isChecked, walletRadioGroup);
-      walletRadioGroup.appendChild(radioDiv);
-    });
-  } else {
-    const emptyItem = document.createElement('div');
-    emptyItem.className = 'text-center text-muted p-3';
-    emptyItem.textContent = '没有保存的钱包账户';
-    walletRadioGroup.appendChild(emptyItem);
-  }
-
+  // 创建钱包账户列表
+  fetchConnectedWalletAccounts().then( accounts => {
+    connectedAccounts = accounts;
+    renderWalletAccountsList();
+  })
+  
   // 监听所有签名者选项变化
   document.querySelectorAll('input[name="signerAccount"]').forEach(radio => {
     radio.addEventListener('change', function() {
@@ -414,7 +351,7 @@ function createWalletAccountItem(address, index, checked, walletRadioGroup) {
   // 创建连接/断开按钮（仅当window.ethereum可用时显示）
   const connectBtn = document.createElement('button');
   connectBtn.className = 'btn btn-sm ms-2';
-  connectBtn.style.display = ethereumAvailable ? 'inline-block' : 'none';
+  connectBtn.style.display = walletAvailable ? 'inline-block' : 'none';
   
   updateConnectButtonState(connectBtn, isConnected);
   
