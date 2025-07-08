@@ -58,7 +58,7 @@ const AccountView = async () => {
     const account = data.account;
 
     const transactions = data.transactions.data.flat().filter(x=> x!=null);
-    console.log(transactions);
+    // console.log(transactions);
     
     return `
       <div class="row mt-4">
@@ -362,23 +362,9 @@ AccountView.init = () => {
             throw new Error("MetaMask未安装或不可用");
           }
 
-          // 请求用户连接账户
-          const accounts = await window.ethereum.request({
-            method: 'eth_requestAccounts'
-          });
-          
-          if (!accounts || accounts.length === 0) {
-            throw new Error("没有连接到MetaMask账户");
-          }
-
-          // 确认从地址是当前连接的地址
-          const userWalletAddress = accounts[0];
-          if (userWalletAddress.toLowerCase() !== fromAddress.toLowerCase()) {
-            throw new Error("连接的MetaMask账户与发送地址不符");
-          }
-
           // 使用MetaMask直接发送交易
           // MetaMask会处理签名并发送交易
+          console.log('MetaMask 发起转账，请耐心等待钱包确认');
           const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [txData]

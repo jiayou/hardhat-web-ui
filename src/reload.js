@@ -29,3 +29,5 @@ module.exports = function(folder) {
     require(folder)(req, res, next)
   }
 }
+
+// https://github.com/kevinsimper/express-reload
