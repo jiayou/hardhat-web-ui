@@ -6,13 +6,11 @@
 // 全局状态对象
 const globalState = {
 
-  currentSigner: null,
+  currentSigner: null, // 将会是一个 { address: "0x...", type: "hardhat" 或 "wallet" } 对象
   // 缓存的signer列表
   hardhatAccounts: [],
   // 用户钱包账户列表
   walletAccounts: [],
-  // 当前使用的signer类型
-  signerType: 'hardhat',
   
   
   // 缓存的区块数据
@@ -43,10 +41,6 @@ function initGlobalState() {
       globalState.currentSigner = localStorage.getItem('currentSigner') || null;
     }
     
-    // 从localStorage恢复signerType
-    if (!globalState.signerType) {
-      globalState.signerType = localStorage.getItem('signerType') || 'hardhat';
-    }
     
     // 从localStorage恢复walletAccounts
     const savedWalletAccounts = localStorage.getItem('walletAccounts');
@@ -73,25 +67,26 @@ function saveGlobalState() {
 /**
  * 获取或设置当前signer
  * @param {string|null} newSigner - 新的signer地址
- * @returns {string|null} 当前signer地址
+ * @returns {object|null} 当前signer对象
  */
 export function currentSigner(newSigner, type) {
   if (newSigner !== undefined) {
-    globalState.currentSigner = newSigner;
-    
-    // 同时更新localStorage中的currentSigner
+    // 如果提供了新的地址，创建一个新的signer对象
     if (newSigner) {
+      // 设置新的signer对象
+      globalState.currentSigner = {
+        address: newSigner,
+        type: type || 'hardhat'
+      };
+
+      // 同时更新localStorage
       localStorage.setItem('currentSigner', newSigner);
     } else {
+      // 如果传入null或undefined，清除当前signer
+      globalState.currentSigner = null;
       localStorage.removeItem('currentSigner');
     }
-    
-    // 如果提供了type，更新signerType
-    if (type !== undefined) {
-      globalState.signerType = type;
-      localStorage.setItem('signerType', type);
-    }
-    
+
     saveGlobalState();
   }
   return globalState.currentSigner;
@@ -153,7 +148,7 @@ export function clearCache(cacheType = null) {
  * @returns {string} 当前signer类型
  */
 export function getSignerType() {
-  return globalState.signerType;
+  return globalState.currentSigner ? globalState.currentSigner.type : 'hardhat';
 }
 
 /**

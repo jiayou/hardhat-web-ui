@@ -264,7 +264,7 @@ AccountView.init = () => {
       const valueInHex = '0x' + parseInt(valueInWei).toString(16);
       
       // 获取当前签名者地址
-      const fromAddress = currentSigner();
+      const fromAddress = currentSigner().address;
       
       if (!fromAddress) {
         showToast('Error', '请先连接钱包');

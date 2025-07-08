@@ -9,8 +9,7 @@ import {
   currentSigner, 
   addWalletAccount, 
   removeWalletAccount, 
-  getWalletAccounts, 
-  getSignerType
+  getWalletAccounts
 } from './state.js';
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
@@ -90,12 +89,13 @@ async function updateNetworkInfo() {
  */
 function displayCurrentSigner() {
   const selectedSigner = currentSigner();
-  const signerType = getSignerType ? getSignerType() : 'hardhat';
+  const signerAddress = selectedSigner ? selectedSigner.address : null;
+  const signerType = selectedSigner ? selectedSigner.type : 'hardhat';
   const signerDisplay = document.getElementById('currentSignerAddress');
   
-  if (selectedSigner) {
-    signerDisplay.textContent = shortenAddress(selectedSigner);
-    signerDisplay.title = selectedSigner;
+  if (signerAddress) {
+    signerDisplay.textContent = shortenAddress(signerAddress);
+    signerDisplay.title = signerAddress;
     
     // 根据类型设置不同样式
     if (signerType === 'hardhat') {
@@ -147,28 +147,29 @@ function openSignerDialog() {
               <div class="mt-2 mb-3" id="walletSignerList" style="display:none;">
                 <div class="d-flex justify-content-between mb-2">
                   <h6>已保存的钱包地址</h6>
-                  <button type="button" class="btn btn-sm btn-primary" id="addWalletBtn">添加钱包地址</button>
                 </div>
-                <div class="list-group" id="walletList">
-                  <!-- 钱包账户将在这里动态填充 -->
+                <div id="walletSignerRadioGroup" class="mb-3">
+                  <!-- 钱包账户单选按钮将在这里动态填充 -->
                 </div>
-              </div>
-              
-              <div id="addWalletForm" style="display:none;" class="mt-3 p-3 border rounded">
-                <div class="mb-3">
-                  <label for="newWalletAddress" class="form-label">钱包地址</label>
-                  <input type="text" class="form-control" id="newWalletAddress" placeholder="输入以0x开头的地址...">
-                </div>
-                <div class="d-flex justify-content-end">
-                  <button type="button" class="btn btn-secondary me-2" id="cancelAddWallet">取消</button>
-                  <button type="button" class="btn btn-success" id="confirmAddWallet">添加</button>
+                
+                <div class="mt-3 p-3 border rounded">
+                  <div class="mb-3">
+                    <label for="newWalletAddress" class="form-label">添加新钱包地址</label>
+                    <input type="text" class="form-control" id="newWalletAddress" placeholder="输入以0x开头的地址...">
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-success" id="confirmAddWallet">添加</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" id="confirmSigner">确认</button>
+          <div class="modal-footer d-flex justify-content-between">
+            <div id="currentSelectedAddress" class="text-muted"></div>
+            <div>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+              <button type="button" class="btn btn-primary" id="confirmSigner">确认</button>
+            </div>
           </div>
         </div>
       </div>
@@ -186,14 +187,26 @@ function openSignerDialog() {
   
   // 获取当前选中的signer和类型
   const selectedSigner = currentSigner();
-  const currentType = getSignerType ? getSignerType() : 'hardhat';
+  const signerAddress = selectedSigner ? selectedSigner.address : null;
+  const currentType = selectedSigner ? selectedSigner.type : 'hardhat';
   
   // 设置初始选中的类型
   document.getElementById(currentType === 'hardhat' ? 'hardhatSigner' : 'walletSigner').checked = true;
-  if (currentType === 'wallet') {
+  if (currentType === 'hardhat') {
+    document.getElementById('walletSignerList').style.display = 'none';
+  } else {
     document.getElementById('hardhatSignerList').style.display = 'none';
     document.getElementById('walletSignerList').style.display = 'block';
   }
+  
+  // 初始化当前选择的显示
+  const currentSelectedAddressDiv = document.getElementById('currentSelectedAddress');
+  if (signerAddress) {
+    currentSelectedAddressDiv.textContent = `当前选择: ${signerAddress}`;
+  } else {
+    currentSelectedAddressDiv.textContent = '请选择一个地址';
+  }
+
   
   // 获取并填充Hardhat测试账户
   const hardhatSelect = document.getElementById('hardhatSelect');
@@ -211,7 +224,7 @@ function openSignerDialog() {
         option.textContent = typeof signer === 'string' ? longerAddress(signer) : 
                             (signer.name ? `${signer.name} (${longerAddress(address)})` : longerAddress(address));
         
-        if (selectedSigner === address && currentType === 'hardhat') {
+        if (signerAddress === address && currentType === 'hardhat') {
           option.selected = true;
         }
         selectElement.appendChild(option);
@@ -229,87 +242,77 @@ function openSignerDialog() {
   });
   
   // 获取并填充钱包账户
-  const walletList = document.getElementById('walletList');
-  walletList.innerHTML = ''; // 清空现有内容
+  const walletRadioGroup = document.getElementById('walletSignerRadioGroup');
+  walletRadioGroup.innerHTML = ''; // 清空现有内容
   
   const walletAccounts = getWalletAccounts ? getWalletAccounts() : [];
   if (walletAccounts && walletAccounts.length > 0) {
-    walletAccounts.forEach(address => {
-      const item = document.createElement('div');
-      item.className = 'list-group-item d-flex justify-content-between align-items-center';
-      if (selectedSigner === address && currentType === 'wallet') {
-        item.classList.add('active');
-      }
-      item.dataset.address = address;
+    walletAccounts.forEach((address, index) => {
+      const radioDiv = document.createElement('div');
+      radioDiv.className = 'form-check d-flex justify-content-between align-items-center mb-2';
       
-      const addressSpan = document.createElement('span');
-      addressSpan.textContent = shortenAddress(address);
-      addressSpan.title = address;
-      item.appendChild(addressSpan);
+      // 创建radio按钮
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.className = 'form-check-input';
+      radio.name = 'walletAddress';
+      radio.id = `wallet-${index}`;
+      radio.value = address;
+      radio.checked = signerAddress === address && currentType === 'wallet';
       
-      // 创建按钮组
-      const btnGroup = document.createElement('div');
-      
-      // 创建选择按钮
-      const selectBtn = document.createElement('button');
-      selectBtn.className = 'btn btn-sm btn-outline-primary me-2';
-      selectBtn.innerHTML = '<i class="bi bi-check"></i>';
-      selectBtn.title = '选择此账户';
-      selectBtn.onclick = function() {
-        // 清除其他选中状态
-        document.querySelectorAll('#walletList .list-group-item').forEach(el => {
-          el.classList.remove('active');
-        });
-        // 设置当前选中
-        item.classList.add('active');
-      };
-      btnGroup.appendChild(selectBtn);
+      // 创建label
+      const label = document.createElement('label');
+      label.className = 'form-check-label me-auto';
+      label.htmlFor = `wallet-${index}`;
+      label.textContent = address;
       
       // 创建删除按钮
       const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn btn-sm btn-outline-danger';
+      deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
       deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
       deleteBtn.title = '删除此账户';
-      deleteBtn.onclick = function() {
+      deleteBtn.onclick = function(e) {
+        e.preventDefault(); // 防止触发radio选择
         if (confirm('确定要删除此钱包地址吗？')) {
           // 从列表和存储中删除
           if (removeWalletAccount) {
             removeWalletAccount(address);
           }
-          item.remove();
+          radioDiv.remove();
           
           // 如果列表为空，显示提示信息
-          if (walletList.children.length === 0) {
+          if (walletRadioGroup.children.length === 0) {
             const emptyItem = document.createElement('div');
-            emptyItem.className = 'list-group-item text-center text-muted';
+            emptyItem.className = 'text-center text-muted p-3';
             emptyItem.textContent = '没有保存的钱包账户';
-            walletList.appendChild(emptyItem);
+            walletRadioGroup.appendChild(emptyItem);
           }
         }
       };
-      btnGroup.appendChild(deleteBtn);
       
-      item.appendChild(btnGroup);
-      
-      // 点击整个item也可以选择
-      item.addEventListener('click', function(e) {
-        if (e.target === item || e.target === addressSpan) {
-          // 清除其他选中状态
-          document.querySelectorAll('#walletList .list-group-item').forEach(el => {
-            el.classList.remove('active');
-          });
-          // 设置当前选中
-          item.classList.add('active');
+      // 添加事件监听器更新当前选择的地址
+      radio.addEventListener('change', function() {
+        if (this.checked) {
+          currentSelectedAddressDiv.textContent = `当前选择: ${address}`;
         }
       });
       
-      walletList.appendChild(item);
+      // 如果是选中状态，初始化显示当前地址
+      if (radio.checked) {
+        currentSelectedAddressDiv.textContent = `当前选择: ${address}`;
+      }
+      
+      radioDiv.appendChild(radio);
+      radioDiv.appendChild(label);
+      radioDiv.appendChild(deleteBtn);
+      
+      walletRadioGroup.appendChild(radioDiv);
     });
   } else {
     const emptyItem = document.createElement('div');
-    emptyItem.className = 'list-group-item text-center text-muted';
+    emptyItem.className = 'text-center text-muted p-3';
     emptyItem.textContent = '没有保存的钱包账户';
-    walletList.appendChild(emptyItem);
+    walletRadioGroup.appendChild(emptyItem);
   }
   
   // 切换Signer类型
@@ -317,7 +320,11 @@ function openSignerDialog() {
     if (this.checked) {
       document.getElementById('hardhatSignerList').style.display = 'block';
       document.getElementById('walletSignerList').style.display = 'none';
-      document.getElementById('addWalletForm').style.display = 'none';
+      
+      // 更新当前选择的地址显示
+      const hardhatSelect = document.getElementById('hardhatSelect');
+      const selectedAddress = hardhatSelect.options[hardhatSelect.selectedIndex].value;
+      document.getElementById('currentSelectedAddress').textContent = `当前选择: ${selectedAddress}`;
     }
   });
   
@@ -325,18 +332,25 @@ function openSignerDialog() {
     if (this.checked) {
       document.getElementById('hardhatSignerList').style.display = 'none';
       document.getElementById('walletSignerList').style.display = 'block';
+      
+      // 更新当前选择的地址显示
+      const selectedRadio = document.querySelector('input[name="walletAddress"]:checked');
+      if (selectedRadio) {
+        document.getElementById('currentSelectedAddress').textContent = `当前选择: ${selectedRadio.value}`;
+      } else {
+        document.getElementById('currentSelectedAddress').textContent = '请选择一个地址';
+      }
     }
   });
   
-  // 添加钱包地址按钮事件
-  document.getElementById('addWalletBtn').addEventListener('click', function() {
-    document.getElementById('addWalletForm').style.display = 'block';
+  // 当hardhat select改变时更新当前选择的地址
+  document.getElementById('hardhatSelect').addEventListener('change', function() {
+    if (document.getElementById('hardhatSigner').checked) {
+      document.getElementById('currentSelectedAddress').textContent = `当前选择: ${this.value}`;
+    }
   });
   
-  document.getElementById('cancelAddWallet').addEventListener('click', function() {
-    document.getElementById('addWalletForm').style.display = 'none';
-  });
-  
+  // 添加钱包地址事件
   document.getElementById('confirmAddWallet').addEventListener('click', function() {
     const newAddress = document.getElementById('newWalletAddress').value.trim();
     
@@ -359,74 +373,82 @@ function openSignerDialog() {
     }
     
     // 刷新列表
+    const walletRadioGroup = document.getElementById('walletSignerRadioGroup');
+    
     // 移除空提示
-    if (walletList.querySelector('.text-muted')) {
-      walletList.innerHTML = '';
+    const emptyItem = walletRadioGroup.querySelector('.text-muted');
+    if (emptyItem) {
+      walletRadioGroup.innerHTML = '';
     }
     
-    // 添加新项目
-    const item = document.createElement('div');
-    item.className = 'list-group-item d-flex justify-content-between align-items-center active';
-    item.dataset.address = newAddress;
+    // 创建新的radio div
+    const radioDiv = document.createElement('div');
+    radioDiv.className = 'form-check d-flex justify-content-between align-items-center mb-2';
     
-    const addressSpan = document.createElement('span');
-    addressSpan.textContent = shortenAddress(newAddress);
-    addressSpan.title = newAddress;
-    item.appendChild(addressSpan);
+    // 确定新的索引
+    const newIndex = walletRadioGroup.children.length;
     
-    // 创建按钮组
-    const btnGroup = document.createElement('div');
+    // 创建radio按钮
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.className = 'form-check-input';
+    radio.name = 'walletAddress';
+    radio.id = `wallet-${newIndex}`;
+    radio.value = newAddress;
+    radio.checked = true; // 新添加的设为选中
     
-    // 创建选择按钮
-    const selectBtn = document.createElement('button');
-    selectBtn.className = 'btn btn-sm btn-outline-primary me-2';
-    selectBtn.innerHTML = '<i class="bi bi-check"></i>';
-    selectBtn.title = '选择此账户';
-    selectBtn.onclick = function() {
-      // 清除其他选中状态
-      document.querySelectorAll('#walletList .list-group-item').forEach(el => {
-        el.classList.remove('active');
-      });
-      // 设置当前选中
-      item.classList.add('active');
-    };
-    btnGroup.appendChild(selectBtn);
+    // 创建label
+    const label = document.createElement('label');
+    label.className = 'form-check-label me-auto';
+    label.htmlFor = `wallet-${newIndex}`;
+    label.textContent = newAddress;
     
     // 创建删除按钮
     const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn btn-sm btn-outline-danger';
+    deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
     deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
     deleteBtn.title = '删除此账户';
-    deleteBtn.onclick = function() {
+    deleteBtn.onclick = function(e) {
+      e.preventDefault();
       if (confirm('确定要删除此钱包地址吗？')) {
         // 从列表和存储中删除
         if (removeWalletAccount) {
           removeWalletAccount(newAddress);
         }
-        item.remove();
+        radioDiv.remove();
         
         // 如果列表为空，显示提示信息
-        if (walletList.children.length === 0) {
+        if (walletRadioGroup.children.length === 0) {
           const emptyItem = document.createElement('div');
-          emptyItem.className = 'list-group-item text-center text-muted';
+          emptyItem.className = 'text-center text-muted p-3';
           emptyItem.textContent = '没有保存的钱包账户';
-          walletList.appendChild(emptyItem);
+          walletRadioGroup.appendChild(emptyItem);
         }
       }
     };
-    btnGroup.appendChild(deleteBtn);
     
-    item.appendChild(btnGroup);
-    
-    // 清除其他选中状态
-    document.querySelectorAll('#walletList .list-group-item').forEach(el => {
-      el.classList.remove('active');
+    // 添加事件监听器更新当前选择的地址
+    radio.addEventListener('change', function() {
+      if (this.checked) {
+        document.getElementById('currentSelectedAddress').textContent = `当前选择: ${newAddress}`;
+      }
     });
     
-    walletList.appendChild(item);
+    // 更新当前选择的地址显示
+    document.getElementById('currentSelectedAddress').textContent = `当前选择: ${newAddress}`;
     
-    // 隐藏表单
-    document.getElementById('addWalletForm').style.display = 'none';
+    // 取消其他radio的选中状态
+    document.querySelectorAll('input[name="walletAddress"]').forEach(r => {
+      r.checked = false;
+    });
+    
+    radioDiv.appendChild(radio);
+    radioDiv.appendChild(label);
+    radioDiv.appendChild(deleteBtn);
+    
+    walletRadioGroup.appendChild(radioDiv);
+    
+    // 清空输入框
     document.getElementById('newWalletAddress').value = '';
     
     showToast('成功', '钱包地址已添加', 'success');
@@ -444,9 +466,9 @@ function openSignerDialog() {
       selectedAddress = select.options[select.selectedIndex].value;
     } else {
       selectedType = 'wallet';
-      const activeItem = document.querySelector('#walletList .list-group-item.active');
-      if (activeItem) {
-        selectedAddress = activeItem.dataset.address;
+      const selectedRadio = document.querySelector('input[name="walletAddress"]:checked');
+      if (selectedRadio) {
+        selectedAddress = selectedRadio.value;
       }
     }
     

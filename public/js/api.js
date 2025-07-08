@@ -90,7 +90,7 @@ export async function fetchContractDetails(contractName) {
 export async function deployContract(contractName, args) {
   try {
     // 获取当前选中的signer
-    const signer = currentSigner();
+    const signer = currentSigner().address;
     console.log("deploy contract with signer:", signer)
     
     const response = await fetch('/api/contract/deploy', {
@@ -127,7 +127,7 @@ export async function deployContract(contractName, args) {
 export async function callContractFunction(address, contractName, functionName, args, options = {}) {
   try {
     // 获取当前选中的signer
-    const signer = currentSigner();
+    const signer = currentSigner().address;
     console.log("call contract method with signer:", signer)
     
     const response = await fetch('/api/contract/call', {
