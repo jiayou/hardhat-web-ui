@@ -357,6 +357,26 @@ AccountView.init = () => {
           const data = await response.json();
           const txData = data.txData;
 
+          // 确保MetaMask已连接并有权限
+          if (!window.ethereum) {
+            throw new Error("MetaMask未安装或不可用");
+          }
+
+          // 请求用户连接账户
+          const accounts = await window.ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          
+          if (!accounts || accounts.length === 0) {
+            throw new Error("没有连接到MetaMask账户");
+          }
+
+          // 确认从地址是当前连接的地址
+          const userWalletAddress = accounts[0];
+          if (userWalletAddress.toLowerCase() !== fromAddress.toLowerCase()) {
+            throw new Error("连接的MetaMask账户与发送地址不符");
+          }
+
           // 使用MetaMask直接发送交易
           // MetaMask会处理签名并发送交易
           const txHash = await window.ethereum.request({
@@ -369,7 +389,7 @@ AccountView.init = () => {
           // 显示交易哈希并等待交易确认
           // 不需要发送回后端，因为交易已经被MetaMask直接发送到网络
           const result = {
-            txHash: txHash,
+            transactionHash: txHash,
             from: fromAddress,
             to: targetAddress
           };
@@ -394,6 +414,25 @@ AccountView.init = () => {
 
         } catch (error) {
           console.error('交易出错:', error);
+          modal.hide();
+          let errorMessage = '交易失败';
+          
+          // 处理常见的MetaMask错误
+          if (error.code === 4001) {
+            errorMessage = '用户拒绝了交易请求';
+          } else if (error.code === 4100) {
+            errorMessage = '请先在MetaMask中授权此应用';
+          } else if (error.code === 4200) {
+            errorMessage = '钱包未连接或者链不匹配';
+          } else if (error.code === 4900) {
+            errorMessage = '钱包断开连接';
+          } else if (error.code === 4901) {
+            errorMessage = '请安装MetaMask';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          showToast('Error', errorMessage);
         }
       })
     });
