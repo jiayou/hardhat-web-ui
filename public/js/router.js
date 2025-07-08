@@ -25,7 +25,24 @@ const routes = {
       }
     }
   },
-  '/transaction': { view: () => import('./views/transaction.js').then(m => m.default) },
+  '/transaction': {
+    view: () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('hash')) {
+        const txHash = params.get('hash');
+        return import('./views/transaction_item.js').then(m => {
+          const viewFn = m.default;
+          // 为确保视图函数接收正确参数，创建一个代理函数
+          const proxyFn = (params) => viewFn(txHash);
+          // 复制原始视图的init方法到代理函数
+          proxyFn.init = viewFn.init;
+          return proxyFn;
+        });
+      } else {
+        return import('./views/transaction_list.js').then(m => m.default);
+      }
+    }
+  },
   '/account': { 
     view: () => {
       const params = new URLSearchParams(window.location.search);
