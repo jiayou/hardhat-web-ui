@@ -7,7 +7,24 @@
  */
 const routes = {
   '/': { view: () => import('./views/index.js').then(m => m.default) },
-  '/block': { view: () => import('./views/block.js').then(m => m.default) },
+  '/block': { 
+    view: () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('hash') || params.has('number')) {
+        const blockId = params.has('hash') ? params.get('hash') : params.get('number');
+        return import('./views/block_item.js').then(m => {
+          const viewFn = m.default;
+          // 为确保视图函数接收正确参数，创建一个代理函数
+          const proxyFn = (params) => viewFn(blockId);
+          // 复制原始视图的init方法到代理函数
+          proxyFn.init = viewFn.init;
+          return proxyFn;
+        });
+      } else {
+        return import('./views/block_list.js').then(m => m.default);
+      }
+    }
+  },
   '/transaction': { view: () => import('./views/transaction.js').then(m => m.default) },
   '/account': { 
     view: () => {
