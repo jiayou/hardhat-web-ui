@@ -13,7 +13,7 @@ async function testConnectedWalletAccounts() {
 }
 
 async function fetchConnectedWalletAccounts() {
-  return await testConnectedWalletAccounts();
+  // return await testConnectedWalletAccounts();
 
   if (!window.ethereum) return []
 

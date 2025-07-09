@@ -20,6 +20,11 @@ const TransactionItemView = async (txHash) => {
 
     const tx = data.transaction;
     const receipt = data.receipt;
+    
+    // 获取所有可用字段，过滤掉已经在表格中明确展示的字段
+    const explicitFields = ['hash', 'from', 'to', 'value', 'gasPrice', 'gasLimit', 'maxPriorityFeePerGas', 'maxFeePerGas', 'type', 'data'];
+    const additionalTxFields = Object.keys(tx).filter(key => !explicitFields.includes(key));
+    const additionalReceiptFields = receipt ? Object.keys(receipt).filter(key => key !== 'logs') : [];
 
     return `
       <div class="row mt-4">
@@ -65,9 +70,23 @@ const TransactionItemView = async (txHash) => {
                       <th scope="row">Gas Price</th>
                       <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
                     </tr>
+                    ${tx.type >= 2 ? `
+                    <tr>
+                      <th scope="row">Max Priority Fee</th>
+                      <td>${tx.maxPriorityFeePerGas ? (parseInt(tx.maxPriorityFeePerGas) / 1e9) + ' Gwei' : 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Max Fee Per Gas</th>
+                      <td>${tx.maxFeePerGas ? (parseInt(tx.maxFeePerGas) / 1e9) + ' Gwei' : 'N/A'}</td>
+                    </tr>
+                    ` : ''}
                     <tr>
                       <th scope="row">Gas Limit</th>
-                      <td>${parseInt(tx.gas)}</td>
+                      <td>${parseInt(tx.gasLimit)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">交易类型</th>
+                      <td>${tx.type !== undefined ? `Type-${tx.type}` : 'Legacy'}</td>
                     </tr>
                     <tr>
                       <th scope="row">状态</th>
@@ -79,12 +98,72 @@ const TransactionItemView = async (txHash) => {
                           '<span class="badge bg-warning">待处理</span>'}
                       </td>
                     </tr>
+                    ${additionalTxFields.map(field => `
+                    <tr>
+                      <th scope="row">${field}</th>
+                      <td>${typeof tx[field] === 'object' ? 
+                          '<pre class="mb-0"><code>' + JSON.stringify(tx[field], null, 2) + '</code></pre>' : 
+                          tx[field]}</td>
+                    </tr>
+                    `).join('')}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
         </div>
+
+        ${receipt ? `
+        <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">交易回执详情</h5>
+              <div class="table-responsive">
+                <table class="table">
+                  <tbody>
+                    <tr>
+                      <th scope="row">交易状态</th>
+                      <td>
+                        ${receipt.status ? 
+                          '<span class="badge bg-success">成功</span>' :
+                          '<span class="badge bg-danger">失败</span>'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">区块号</th>
+                      <td><a href="/block?number=${receipt.blockNumber}" data-link>${receipt.blockNumber}</a></td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Gas Used</th>
+                      <td>${parseInt(receipt.gasUsed)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Cumulative Gas Used</th>
+                      <td>${parseInt(receipt.cumulativeGasUsed)}</td>
+                    </tr>
+                    ${receipt.effectiveGasPrice ? `
+                    <tr>
+                      <th scope="row">Effective Gas Price</th>
+                      <td>${(parseInt(receipt.effectiveGasPrice) / 1e9).toFixed(2) + ' Gwei'}</td>
+                    </tr>
+                    ` : ''}
+                    ${additionalReceiptFields
+                      .filter(field => field !== 'status' && field !== 'blockNumber' && field !== 'gasUsed' && field !== 'cumulativeGasUsed' && field !== 'effectiveGasPrice')
+                      .map(field => `
+                    <tr>
+                      <th scope="row">${field}</th>
+                      <td>${typeof receipt[field] === 'object' ? 
+                          '<pre class="mb-0"><code>' + JSON.stringify(receipt[field], null, 2) + '</code></pre>' : 
+                          receipt[field]}</td>
+                    </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         ${receipt?.logs && receipt.logs.length > 0 ? `
         <div class="col-12 mb-4">
@@ -116,7 +195,7 @@ const TransactionItemView = async (txHash) => {
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">输入数据</h5>
-              <pre class="mt-3"><code>${tx.input === '0x' ? '(无数据)' : tx.input}</code></pre>
+              <pre class="mt-3"><code>${tx.data === '0x' ? '(无数据)' : tx.data}</code></pre>
             </div>
           </div>
         </div>
