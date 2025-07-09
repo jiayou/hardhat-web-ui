@@ -18,7 +18,11 @@ export function renderDeployForm(contract) {
   const constructor = contract.abi.find(item => item.type === 'constructor');
 
   if (constructor && constructor.inputs.length > 0) {
-    constructorParams.innerHTML = '<h6 class="mb-3">构造函数参数:</h6>' +
+    constructorParams.innerHTML = '<div class="mb-3">\n' +
+    '  <label class="form-label">部署价值 (ETH)</label>\n' +
+    '  <input type="number" step="0.0001" class="form-control" id="deployValue" placeholder="0.0">\n' +
+    '</div>\n' +
+    '<h6 class="mb-3">构造函数参数:</h6>' +
       constructor.inputs.map((input, index) => `
         <div class="mb-3">
           <label class="form-label">${input.name || 'param' + index} (${input.type})</label>
@@ -146,11 +150,13 @@ async function handleWalletDeploy(contract, args, deployResult, onDeploySuccess)
   
   try {
     // 1. 从后端获取部署数据
+    const deployValue = document.getElementById('deployValue').value || '0';
     const prepareData = await prepareDeploy(
       signerInfo.address,
       contract.contractName,
       contract.bytecode,
-      args
+      args,
+      deployValue
     );
     
     // 2. 请求钱包发送交易

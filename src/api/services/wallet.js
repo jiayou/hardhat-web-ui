@@ -25,15 +25,36 @@ function prepareTansfer(provider, from, to, value) {
     }
 }
 
-async function prepareDeploy(provider, from, bytecode, args) {
+async function prepareDeploy(provider, from, bytecode, args, contractABI, value = 0) {
+    console.log('Preparing deploy with:', { from, bytecodeLength: bytecode?.length, args, contractABI: JSON.stringify(contractABI, null, 2) });
     // 准备部署合约的交易数据
-    const deployData = bytecode;
+    let deployData = bytecode;
+    
+    // 从ABI中获取构造函数
+    const constructor = contractABI.find(item => item.type === 'constructor');
+    
+    // 如果有构造函数参数，对参数进行编码并拼接到bytecode
+    if (constructor && constructor.inputs && constructor.inputs.length > 0 && args && args.length > 0) {
+        // 创建接口实例
+        const iface = new ethers.utils.Interface([constructor]);
+        const encodedArgs = iface.encodeDeploy(args);
+        deployData = bytecode + encodedArgs.slice(2); // 移除0x前缀后拼接
+    }
     
     // 估算部署合约的gas限制
-    const gasEstimate = await provider.estimateGas({
+    let gasEstimate;
+    try {
+      gasEstimate = await provider.estimateGas({
         from: from,
-        data: deployData
+        data: deployData,
+          value: value
     });
+    console.log('Gas estimate successful:', gasEstimate.toString());
+  } catch (error) {
+    console.error('Gas estimation failed:', error);
+    console.error('Deployment data:', deployData);
+    throw error;
+  }
     
     // 获取当前推荐的gas价格
     const gasPrice = await provider.getGasPrice();

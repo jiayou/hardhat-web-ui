@@ -10,7 +10,7 @@ const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
 const apiRoutes = require('./api');
 const reload = require('./reload')
-// const ethers = require('ethers');
+const ethers = require('ethers');
 
 /**
  * 启动服务器

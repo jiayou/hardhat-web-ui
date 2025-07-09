@@ -218,7 +218,7 @@ export async function fetchSigners() {
  * @param {Array} args - 构造函数参数
  * @returns {Promise} 包含准备好的交易数据的Promise
  */
-export async function prepareDeploy(from, contractName, bytecode, args) {
+export async function prepareDeploy(from, contractName, bytecode, args, value) {
   try {
     const response = await fetch('/api/prepare-deploy', {
       method: 'POST',
@@ -229,7 +229,8 @@ export async function prepareDeploy(from, contractName, bytecode, args) {
         from,
         contractName,
         bytecode,
-        args
+        args,
+        value: value
       }),
     });
     if (!response.ok) {

@@ -2,9 +2,10 @@
  * 交易相关API路由
  */
 const express = require('express');
+const ethers = require('ethers');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
-const wallet = require('../services/wallet');
+const wallet = require('../services/wallet').default;
 
 // 存储全局批量大小设置
 let globalBatchSize = 10;
@@ -120,7 +121,18 @@ router.post('/prepare-transfer', async (req, res) => {
 router.post('/prepare-deploy', async (req, res) => {
   console.log('prepare-deploy', req.body);
   try {
-    const { from, bytecode, args } = req.body;
+    const { from, contractName, bytecode, args, value } = req.body;
+    const hardhat = require('../services/hardhat');
+    let contractABI = [];
+    try {
+      // 使用Hardhat方法获取合约ABI
+      const hre = req.app.locals.hre;
+      const contractDetails = await hardhat.getContractDetails(hre, contractName);
+      contractABI = contractDetails.abi || [];
+    } catch (error) {
+      console.error('Error loading contract ABI:', error);
+      throw new Error('Failed to load contract ABI');
+    }
 
     console.log('from:', from);
     console.log('bytecode length:', bytecode ? bytecode.length : 0);
@@ -128,7 +140,8 @@ router.post('/prepare-deploy', async (req, res) => {
     const { httpProvider } = req.app.locals;
 
     // 使用wallet服务准备部署合约的交易数据
-    const deployData = await wallet.prepareDeploy(httpProvider, from, bytecode, args);
+    const valueInWei = value ? ethers.parseEther(value.toString()) : 0n;
+    const deployData = await wallet.prepareDeploy(httpProvider, from, bytecode, args, contractABI, valueInWei);
 
     // 获取当前网络ID
     const network = await httpProvider.getNetwork();
