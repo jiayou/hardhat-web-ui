@@ -4,6 +4,7 @@
 
 import { showToast } from '../utils.js';
 import { currentSigner } from '../state.js';
+import TransferConfirm from '../widgets/transfer_confirm.js';
 
 // 合约实例缓存
 const contractInstances = {};
@@ -369,7 +370,12 @@ async function walletCall(e, contract) {
   const isPayable = form.dataset.fnPayable === 'true';
   const address = document.getElementById('contractAddress').value;
   const signer = currentSigner();
-  
+
+  // 通过MetaMask发送交易
+  if (!window.ethereum) {
+    // throw new Error('MetaMask或其他兼容钱包未安装');
+  }
+
   if (!address || !functionName || !contract) {
     showToast('Error', 'Missing contract address or function name');
     return;
@@ -392,70 +398,54 @@ async function walletCall(e, contract) {
   const resultElement = form.querySelector('.function-result');
   const resultPre = resultElement.querySelector('pre');
 
-  try {
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
 
-    // 准备调用合约的交易数据
-    const contractABI = contract.abi;
-    const functionABI = contractABI.find(item => item.name === functionName);
-    
-    // 调用prepare-call API处理编码和准备交易
-    const response = await fetch('/api/contract/prepare-call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: signer.address,
-        to: address,
-        contractABI,
-        functionName,
-        args,
-        value: options.value ? options.value : undefined
-      })
-    });
-    
+  // 准备调用合约的交易数据
+  const contractABI = contract.abi;
+  const functionABI = contractABI.find(item => item.name === functionName);
+  
+  // 调用prepare-call API处理编码和准备交易
+  fetch('/api/contract/prepare-call', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: signer.address,
+      to: address,
+      contractABI,
+      functionName,
+      args,
+      value: options.value ? options.value : undefined
+    })
+  })
+  .then(response => {
     if (!response.ok) {
+      console.error(response.statusText);
       throw new Error(`Failed to prepare transaction: ${response.statusText}`);
     }
     
-    const prepareData = await response.json();
-    
-    // 通过MetaMask发送交易
-    if (!window.ethereum) {
-      throw new Error('MetaMask或其他兼容钱包未安装');
-    }
-    
-    try {
-      // 发送交易
-      const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [prepareData.txData],
-      });
-      
-      resultElement.style.display = 'block';
-      resultPre.textContent = `交易已提交，交易哈希: ${txHash}\n请等待交易确认。`;
-      resultElement.classList.remove('text-danger');
-      resultElement.classList.add('text-success');
-    } catch (walletError) {
-      console.error('钱包交易错误:', walletError);
-      throw new Error(`钱包交易失败: ${walletError.message}`);
-    }
+    response.json().then(data => {
+      // 显示转账确认框
+      console.log("prepare-transfer response: ", data);
+      TransferConfirm.show(data.txData);
 
-    if (window.hljs) {
-      window.hljs.highlightElement(resultPre);
-    }
-  } catch (error) {
+    })
+    
+  })
+  .catch (error => {
     console.error('Error calling function:', error);
     resultElement.style.display = 'block';
     resultPre.textContent = error.message;
     resultElement.classList.remove('text-success');
     resultElement.classList.add('text-danger');
-  } finally {
+  }) 
+  .finally(()=>{
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
     submitBtn.textContent = '使用钱包发送';
-  }
+  });
+
 }
 
 /**

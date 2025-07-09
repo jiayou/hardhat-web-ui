@@ -2,9 +2,9 @@
  * 合约视图
  */
 
-import { showToast, shortenAddress } from '../utils.js';
-import { renderContractInfo, adjustTextareaHeights, initContractInfoView, updateContractInfoContent } from './contract_info.js';
-import { renderDeployForm, handleDeployContract, initContractDeployView, renderContractDeploy } from './contract_deploy.js';
+import { showToast } from '../utils.js';
+import { renderContractInfo, initContractInfoView, updateContractInfoContent } from './contract_info.js';
+import { renderDeployForm, initContractDeployView, renderContractDeploy } from './contract_deploy.js';
 import { loadContractInstance, initContractCallView, renderContractCall } from './contract_call.js';
 import { renderContractSource, initContractSourceView } from './contract_source.js';
 
@@ -307,7 +307,7 @@ ContractView.init = () => {
 
   // 初始化各个模块
   initContractInfoView();
-  initContractDeployView(() => handleDeployContract(currentContract, onDeploySuccess));
+  initContractDeployView(onDeploySuccess);
   initContractSourceView();
 
   // 从URL参数加载初始状态
