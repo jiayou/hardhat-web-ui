@@ -137,6 +137,11 @@ export async function loadContractInstance(address, contract) {
     return;
   }
 
+  // 更新URL，添加address参数
+  const url = new URL(window.location);
+  url.searchParams.set('address', address);
+  window.history.pushState({}, '', url);
+
   try {
     // 区分读取和写入函数
     const readFns = contract.abi.filter(item =>
@@ -469,6 +474,18 @@ export function initContractCallView(contract) {
         showToast('Error', 'Please enter a contract address');
       }
     });
+  }
+  
+  // 从URL参数中获取address并自动填充
+  const urlParams = new URLSearchParams(window.location.search);
+  const addressParam = urlParams.get('address');
+  if (addressParam) {
+    const addressInput = document.getElementById('contractAddress');
+    if (addressInput) {
+      addressInput.value = addressParam;
+      // 自动加载合约实例
+      loadContractInstance(addressParam, contract);
+    }
   }
 }
 

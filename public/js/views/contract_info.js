@@ -3,11 +3,39 @@
  */
 
 /**
+ * 渲染合约信息视图
+ * @returns {string} HTML内容
+ */
+export function renderContractInfo() {
+  return `
+    <div class="row">
+      <div class="col-md-6">
+        <h5>合约信息</h5>
+        <table class="table">
+          <tbody id="contractDetails-info"></tbody>
+        </table>
+
+        <h5 class="mt-4">合约字节码</h5>
+        <div class="bytecode-container">
+          <textarea id="contractBytecode" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h5>ABI</h5>
+        <div class="abi-container">
+          <textarea id="contractAbi" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * 显示合约详细信息
  * @param {Object} contract - 合约对象
  * @param {string} contractName - 合约名称
  */
-export function renderContractInfo(contract, contractName) {
+export function updateContractInfoContent(contract, contractName) {
   if (!contract) return;
 
   // 显示ABI

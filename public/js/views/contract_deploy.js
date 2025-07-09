@@ -5,6 +5,27 @@
 import { showToast } from '../utils.js';
 import { currentSigner } from '../state.js';
 
+/**
+ * 渲染合约部署视图
+ * @returns {string} HTML内容
+ */
+export function renderContractDeploy() {
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">部署合约</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="constructorParams" class="my-4"></div>
+        <button id="deployBtn" class="btn btn-primary">部署合约</button>
+        <div id="deployResult" class="mt-4"></div>
+      </div>
+    </div>
+  `;
+}
+
 
 /**
  * 部署合约

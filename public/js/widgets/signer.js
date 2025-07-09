@@ -223,7 +223,7 @@ export function openSignerDialog() {
       currentSigner(selectedAddress, selectedType);
       displayCurrentSigner();
       modal.hide();
-      showToast('成功', 'Signer已更新', 'success');
+      window.location.reload();
     } else {
       showToast('错误', '请选择一个Signer地址', 'danger');
     }
