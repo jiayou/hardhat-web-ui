@@ -3,8 +3,29 @@
  */
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
-import { fetchBlocks } from '../api.js';
 import { getBatchSize, getCachedBlocks, getNextBlock, updateBlockCache, clearCache } from '../state.js';
+
+
+
+/**
+ * 获取区块列表
+ * @param {number} blockNum - 起始区块号
+ * @param {number} batchSize - 每批数量
+ * @returns {Promise} 包含区块列表的Promise
+ */
+export async function fetchBlocks(blockNum = null, batchSize = getBatchSize()) {
+  try {
+    const response = await fetch(`/api/block?blockNum=${blockNum || ''}&batchSize=${batchSize}`);
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching blocks:', error);
+    showToast('Error', 'Failed to fetch blocks');
+    throw error;
+  }
+}
 
 /**
  * 渲染区块列表

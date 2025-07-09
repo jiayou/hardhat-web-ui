@@ -2,7 +2,6 @@
  * 主应用入口文件
  */
 
-import { fetchNetworkInfo } from './api.js';
 import { showToast } from './utils.js';
 import { initSettingsUI } from './state.js';
 import { openSignerDialog, displayCurrentSigner } from './widgets/signer.js';
@@ -54,7 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function initNetworkInfo() {
   try {
-    const data = await fetchNetworkInfo();
+    const response = await fetch('/api/network/info');
+    const data = await response.json();
     if (data && data.network) {
       document.getElementById('networkName').textContent = data.network.name || 'Unknown';
       document.getElementById('chainId').textContent = data.network.chainId || '-';
@@ -69,7 +69,8 @@ async function initNetworkInfo() {
  */
 async function updateNetworkInfo() {
   try {
-    const data = await fetchNetworkInfo();
+    const response = await fetch('/api/network/info');
+    const data = await response.json();
     if (data && data.network) {
       document.getElementById('networkName').textContent = data.network.name || 'Unknown';
       document.getElementById('chainId').textContent = data.network.chainId || '-';

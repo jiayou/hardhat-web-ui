@@ -2,7 +2,6 @@
  * 首页视图
  */
 
-import { fetchNetworkInfo } from '../api.js';
 import { showToast, formatDateTime } from '../utils.js';
 
 /**
@@ -11,7 +10,8 @@ import { showToast, formatDateTime } from '../utils.js';
  */
 const IndexView = async () => {
   try {
-    const networkData = await fetchNetworkInfo();
+    const response = await fetch('/api/network/info');
+    const networkData = await response.json();
 
     // 更新网络信息显示
     if (networkData.network) {

@@ -3,11 +3,52 @@
  */
 
 import { showToast } from '../utils.js';
-import { callContractFunction } from '../api.js';
 import { currentSigner } from '../state.js';
 
 // 合约实例缓存
 const contractInstances = {};
+
+
+/**
+ * 调用合约函数
+ * @param {string} address - 合约地址
+ * @param {string} contractName - 合约名称
+ * @param {string} functionName - 函数名称
+ * @param {Array} args - 函数参数
+ * @param {Object} options - 调用选项（如value等）
+ * @returns {Promise} 包含调用结果的Promise
+ */
+async function callContractFunction(address, contractName, functionName, args, options = {}) {
+  try {
+    // 获取当前选中的signer
+    const signer = currentSigner().address;
+    console.log("call contract method with signer:", signer)
+    
+    const response = await fetch('/api/contract/call', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contractAddress: address,
+        contractName: contractName,
+        method: functionName,
+        args,
+        signer: signer, // 自动附加当前signer
+        ...options
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error calling contract function:', error);
+    showToast('Error', 'Failed to call contract function: ' + error.message);
+    throw error;
+  }
+}
+
 
 /**
  * 创建函数卡片UI

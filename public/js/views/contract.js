@@ -3,7 +3,6 @@
  */
 
 import { showToast, shortenAddress } from '../utils.js';
-import { fetchContracts, fetchContractDetails, deployContract, callContractFunction } from '../api.js';
 import { renderContractInfo, adjustTextareaHeights, initContractInfoView } from './contract_info.js';
 import { renderDeployForm, handleDeployContract, initContractDeployView } from './contract_deploy.js';
 import { loadContractInstance, initContractCallView, getContractInstances } from './contract_call.js';
@@ -11,6 +10,44 @@ import { renderContractSource, initContractSourceView } from './contract_source.
 
 // 当前选中的合约
 let currentContract = null;
+
+
+/**
+ * 获取合约列表
+ * @returns {Promise} 包含合约列表的Promise
+ */
+async function fetchContracts() {
+  try {
+    const response = await fetch('/api/contract');
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading contracts:', error);
+    showToast('Error', 'Failed to load contracts: ' + error.message);
+    throw error;
+  }
+}
+
+/**
+ * 获取合约详情
+ * @param {string} contractName - 合约名称
+ * @returns {Promise} 包含合约详情的Promise
+ */
+async function fetchContractDetails(contractName) {
+  try {
+    const response = await fetch(`/api/contract/${encodeURIComponent(contractName)}`);
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading contract details:', error);
+    showToast('Error', 'Failed to load contract details: ' + error.message);
+    throw error;
+  }
+}
 
 /**
  * 渲染合约视图

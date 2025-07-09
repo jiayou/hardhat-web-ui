@@ -3,9 +3,29 @@
  */
 
 import { showToast, shortenAddress } from '../utils.js';
-import { fetchAccountDetails } from '../api.js';
 import TransferConfirm from '../widgets/transfer_confirm.js';
 import { currentSigner } from '../state.js';
+
+
+/**
+ * 获取指定地址的账户详情
+ * @param {string} address - 账户地址
+ * @returns {Promise} 包含账户详情的Promise
+ */
+async function fetchAccountDetails(address) {
+  try {
+    const response = await fetch(`/api/account/${encodeURIComponent(address)}`);
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching account details:', error);
+    showToast('Error', 'Failed to fetch account details: ' + error.message);
+    throw error;
+  }
+}
+
 
 /**
  * 渲染账户详情视图

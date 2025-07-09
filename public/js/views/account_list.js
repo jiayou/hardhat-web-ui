@@ -3,7 +3,24 @@
  */
 
 import { showToast, shortenAddress } from '../utils.js';
-import { fetchAccounts } from '../api.js';
+
+/**
+ * 获取账户列表
+ */
+async function fetchAccounts() {
+  try {
+    const response = await fetch('/api/account');
+    if (!response.ok) {
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching accounts:', error);
+    showToast('Error', 'Failed to fetch accounts');
+    throw error;
+  }
+}
+
 
 /**
  * 渲染账户列表视图
