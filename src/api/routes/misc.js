@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
+const { handleResult } = require('../utils');
 
 // 存储全局批量大小设置
 let globalBatchSize = 10;
@@ -39,12 +40,13 @@ router.post('/transfer', async (req, res) => {
 
     // 构建交易对象
     const transaction = {
-      from: from,
       to: to,
-      value: amount,
-      gas: "0x10086", // 防止gas不足
+      value: valueInHex,
+      from: from,
+      gas: "0xFFFF",
     };
 
+    console.log('transaction:', transaction);
     const txHash = await httpProvider.send("eth_sendTransaction", [transaction]);
     
     // 等待交易被确认

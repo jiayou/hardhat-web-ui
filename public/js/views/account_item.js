@@ -241,8 +241,15 @@ AccountItemView.init = (address) => {
         }).then(response => {
           if (response.ok) {
             showToast('Success', '转账成功');
+            response.json().then(data => {
+              console.log('转账成功', data)
+            })
+          }
+          else {
+            console.error('转账失败:', response);
           }
         }).catch(error => {
+          console.error('转账失败:', error);
           showToast('Error', '转账失败: ' + error.message);
         })
       }
