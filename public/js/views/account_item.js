@@ -99,13 +99,11 @@ const AccountItemView = async (address) => {
                   <div class="input-group">
                     <input type="number" class="form-control" id="transferAmount" min="0" step="any" required placeholder="输入金额">
                     <select class="form-select" id="transferUnit" style="max-width: 100px;">
-                      <option value="wei">Wei</option>
-                      <option value="gwei">Gwei</option>
                       <option value="ether" selected>ETH</option>
                     </select>
                   </div>
                 </div>
-                <button type="submit" class="btn btn-primary" id="transferBtn" data-address="${address}">转账</button>
+                <button class="btn btn-primary" id="transferBtn" data-address="${address}">发起转账</button>
               </form>
             </div>
           </div>
@@ -187,34 +185,18 @@ AccountItemView.init = (address) => {
     });
   });
 
-  // 处理转账表单
-  const transferForm = document.getElementById('transferForm');
-  if (transferForm) {
-    transferForm.addEventListener('submit', async (e) => {
+  // 绑定转账按钮点击事件
+  const transferBtn = document.getElementById('transferBtn');
+  if (transferBtn) {
+    transferBtn.addEventListener('click', (e)=> {
       e.preventDefault();
-
       // 获取表单数据
-      const targetAddress = transferForm.querySelector('#transferBtn').getAttribute('data-address');
+      const targetAddress = transferBtn.getAttribute('data-address');
       const amount = document.getElementById('transferAmount').value;
       const unit = document.getElementById('transferUnit').value;
 
-      // 将金额转换为wei
-      let valueInWei;
-      switch(unit) {
-        case 'wei':
-          valueInWei = amount;
-          break;
-        case 'gwei':
-          valueInWei = amount * 1e9;
-          break;
-        case 'ether':
-          valueInWei = amount * 1e18;
-          break;
-        default:
-          valueInWei = amount * 1e18; // 默认使用ETH
-      }
-
       // 转换为十六进制
+      let valueInWei = amount * 1e18; // 默认使用ETH
       const valueInHex = '0x' + parseInt(valueInWei).toString(16);
 
       // 获取当前签名者地址
@@ -240,12 +222,6 @@ AccountItemView.init = (address) => {
     });
   }
 
-  // 高亮代码
-  document.querySelectorAll('pre code').forEach((block) => {
-    if (window.hljs) {
-      window.hljs.highlightElement(block);
-    }
-  });
 };
 
 export default AccountItemView;

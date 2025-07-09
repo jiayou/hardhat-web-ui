@@ -20,6 +20,13 @@ const TransferConfirm = {
    */
   show: function(options) {
     const { fromAddress, targetAddress, amount, unit, valueInHex, signerType } = options;
+    console.log("amount", amount)
+
+    // 移除可能存在的旧模态框
+    const existingModal = document.getElementById('transferConfirmModal');
+    if (existingModal) {
+      existingModal.remove();
+    }
 
     // 创建确认对话框
     const confirmModal = `
@@ -33,7 +40,7 @@ const TransferConfirm = {
             <div class="modal-body">
               <p>您即将从账户 <strong>${shortenAddress(fromAddress)}</strong> 转账到:</p>
               <p>接收地址: <strong>${shortenAddress(targetAddress)}</strong></p>
-              <p>金额: <strong>${amount} ${unit}</strong></p>
+              <p>金额: <strong id="transferAmount">${amount} ${unit}</strong></p>
               <p>十六进制Wei值: <strong>${valueInHex}</strong></p>
               <div id="txStatusContainer" class="mt-3 d-none">
                 <div class="alert alert-info">
@@ -103,116 +110,29 @@ const TransferConfirm = {
       }
     };
 
-    // 根据签名者类型添加不同的监听器
-    if (signerType !== 'wallet') {
-      document.getElementById('confirmTransferBtn')?.addEventListener('click', async () => {
-        try {
-          // 更新UI，显示处理中状态
-          showTxStatus('交易处理中，请稍候...');
-          updateButtonsForTx();
-
-          const response = await fetch('/api/transfer', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: fromAddress,
-              to: targetAddress,
-              amount: valueInHex, // 使用十六进制wei值
-              unit: 'hex' // 标识单位为十六进制
-            })
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            showTxStatus(`转账成功！交易哈希: ${result.transactionHash || ''}`);
-            showToast('Success', '转账成功！');
-            // 显示关闭按钮
-            updateButtonsForTx(true);
-            // 3秒后自动关闭模态框
-            setTimeout(() => {
-              modal.hide();
-              document.getElementById('transferConfirmModal').remove();
-              window.location.reload();
-            }, 30000);
-          } else {
-            showTxStatus(`转账失败: ${result.error || '未知错误'}`, true);
-            showToast('Error', `转账失败: ${result.error || '未知错误'}`);
-            // 显示关闭按钮
-            updateButtonsForTx(true);
-          }
-        } catch (error) {
-          console.error('转账出错:', error);
-          showTxStatus(`转账出错: ${error.message}`, true);
-          showToast('Error', `转账出错: ${error.message}`);
-          // 显示关闭按钮
-          updateButtonsForTx(true);
-        }
-      });
-    }
-
-    // 监听钱包转账按钮
-    document.getElementById('walletTransferBtn')?.addEventListener('click', async () => {
+    // 通用交易处理函数
+    const _handleTransaction = async (executeTransactionFn, initialMessage) => {
       try {
         // 更新UI，显示处理中状态
-        showTxStatus('准备钱包交易数据，请稍候...');
+        showTxStatus(initialMessage);
         updateButtonsForTx();
 
-        // 第一步：准备交易数据
-        const response = await fetch('/api/prepare-transfer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            from: fromAddress,
-            to: targetAddress,
-            amount: valueInHex, // 使用十六进制wei值
-            unit: 'hex' // 标识单位为十六进制
-          })
-        });
+        // 执行特定的交易逻辑
+        const result = await executeTransactionFn();
 
-        const data = await response.json();
-        const txData = data.txData;
-
-        // 确保MetaMask已连接并有权限
-        if (!window.ethereum) {
-          throw new Error("MetaMask未安装或不可用");
-        }
-
-        showTxStatus('请在钱包中确认交易...');
-
-        // 使用MetaMask直接发送交易
-        // MetaMask会处理签名并发送交易
-        console.log('MetaMask 发起转账，请耐心等待钱包确认');
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [txData]
-        });
-
-        console.log('Transaction sent with hash:', txHash);
-
-        // 显示交易哈希并等待交易确认
-        // 不需要发送回后端，因为交易已经被MetaMask直接发送到网络
-        const result = {
-          transactionHash: txHash,
-          from: fromAddress,
-          to: targetAddress
-        };
-
-        // 如果成功，显示成功消息
-        showTxStatus(`转账已发送！交易哈希: ${result.transactionHash}`);
-        showToast('Success', '转账已发送！交易哈希: ' + result.transactionHash);
+        // 显示成功消息
+        showTxStatus(`${result.successMessage} ${result.transactionHash || ''}`);
+        showToast('Success', result.toastMessage);
 
         // 显示关闭按钮
         updateButtonsForTx(true);
 
-        // 显示交易结果
-        console.log('交易结果:', result);
+        // 显示交易结果（如果需要）
+        if (result.logDetails) {
+          console.log(result.logDetails, result);
+        }
 
-        // 3秒后自动关闭模态框
+        // 设置关闭模态框定时器
         setTimeout(() => {
           modal.hide();
           document.getElementById('transferConfirmModal').remove();
@@ -220,12 +140,97 @@ const TransferConfirm = {
         }, 30000);
 
       } catch (error) {
-        console.error('钱包转账出错:', error);
-        showTxStatus(`钱包转账出错: ${error.message}`, true);
-        showToast('Error', `钱包转账出错: ${error.message}`);
+        console.error(`${error.context || '交易'}出错:`, error);
+        showTxStatus(`${error.context || '交易'}出错: ${error.message}`, true);
+        showToast('Error', `${error.context || '交易'}出错: ${error.message}`);
         // 显示关闭按钮
         updateButtonsForTx(true);
       }
+    };
+
+    // 标准转账的执行函数
+    const _executeStandardTransfer = async () => {
+      const response = await fetch('/api/transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: targetAddress,
+          amount: valueInHex, // 使用十六进制wei值
+          unit: 'hex' // 标识单位为十六进制
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(result.error || '未知错误');
+        error.context = '转账失败';
+        throw error;
+      }
+
+      return {
+        transactionHash: result.transactionHash || '',
+        successMessage: '转账成功！交易哈希:',
+        toastMessage: '转账成功！'
+      };
+    };
+
+    // 钱包转账的执行函数
+    const _executeWalletTransfer = async () => {
+      // 第一步：准备交易数据
+      const response = await fetch('/api/prepare-transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: targetAddress,
+          amount: valueInHex, // 使用十六进制wei值
+          unit: 'hex' // 标识单位为十六进制
+        })
+      });
+
+      const data = await response.json();
+      const txData = data.txData;
+
+      // 确保MetaMask已连接并有权限
+      if (!window.ethereum) {
+        throw new Error("MetaMask未安装或不可用");
+      }
+
+      showTxStatus('请在钱包中确认交易...');
+
+      // 使用MetaMask直接发送交易
+      console.log('MetaMask 发起转账，请耐心等待钱包确认');
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [txData]
+      });
+
+      console.log('Transaction sent with hash:', txHash);
+
+      return {
+        transactionHash: txHash,
+        from: fromAddress,
+        to: targetAddress,
+        successMessage: '转账已发送！交易哈希:',
+        toastMessage: '转账已发送！交易哈希: ' + txHash,
+        logDetails: '交易结果:'
+      };
+    };
+
+    // 监听标准转账按钮点击
+    document.getElementById('confirmTransferBtn')?.addEventListener('click', () => {
+      _handleTransaction(_executeStandardTransfer, '交易处理中，请稍候...');
+    });
+
+    // 监听钱包转账按钮
+    document.getElementById('walletTransferBtn')?.addEventListener('click', () => {
+      _handleTransaction(_executeWalletTransfer, '准备钱包交易数据，请稍候...');
     });
   }
 };

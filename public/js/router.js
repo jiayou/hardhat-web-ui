@@ -50,8 +50,11 @@ const routes = {
         const address = params.get('address');
         return import('./views/account_item.js').then(m => {
           const viewFn = m.default;
-          // 返回一个新函数，确保无论参数如何，都会使用正确的地址
-          return (params) => viewFn(address);
+          // 为确保视图函数接收正确参数，创建一个代理函数
+          const proxyFn = (params) => viewFn(address);
+          // 复制原始视图的init方法到代理函数
+          proxyFn.init = viewFn.init;
+          return proxyFn;
         });
       } else {
         return import('./views/account_list.js').then(m => m.default);
