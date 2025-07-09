@@ -5,11 +5,19 @@
 import { showToast, shortenAddress } from '../utils.js';
 import { renderContractInfo, adjustTextareaHeights, initContractInfoView } from './contract_info.js';
 import { renderDeployForm, handleDeployContract, initContractDeployView } from './contract_deploy.js';
-import { loadContractInstance, initContractCallView, getContractInstances } from './contract_call.js';
+import { loadContractInstance, initContractCallView, renderContractCall } from './contract_call.js';
 import { renderContractSource, initContractSourceView } from './contract_source.js';
 
 // 当前选中的合约
 let currentContract = null;
+
+/**
+ * 获取当前选中的合约
+ * @returns {Object|null} 当前合约对象或null
+ */
+export function getCurrentContract() {
+  return currentContract;
+}
 
 
 /**
@@ -132,28 +140,7 @@ const ContractView = async () => {
               
               <!-- 交互标签页 -->
               <div class="tab-pane fade" id="interact" role="tabpanel">
-                <div class="mb-4">
-                  <h5>合约实例</h5>
-                  <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="合约地址" id="contractAddress">
-                    <button class="btn btn-outline-secondary" type="button" id="loadContractBtn">加载合约</button>
-                  </div>
-                </div>
-                
-                <div class="row">
-                  <div class="col-md-6">
-                    <h5>读取函数</h5>
-                    <div id="readFunctions">
-                      <p class="text-center text-muted">请先加载合约</p>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <h5>写入函数</h5>
-                    <div id="writeFunctions">
-                      <p class="text-center text-muted">请先加载合约</p>
-                    </div>
-                  </div>
-                </div>
+                ${renderContractCall()}
               </div>
               
               <!-- 源代码标签页 -->

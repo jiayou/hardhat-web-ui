@@ -57,7 +57,7 @@ async function callContractFunction(address, contractName, functionName, args, o
  * @param {boolean} isRead - 是否为读取函数
  * @returns {string} 函数卡片HTML
  */
-function createFunctionCard(fn, index, isRead) {
+function renderFunctionCard(fn, index, isRead) {
   const id = `${isRead ? 'read' : 'write'}-fn-${index}`;
   const payable = fn.stateMutability === 'payable';
   const signerType = currentSigner().type;
@@ -67,6 +67,7 @@ function createFunctionCard(fn, index, isRead) {
                     (signerType === 'wallet' ? 'btn-outline-danger' : 'btn-outline-warning');
 
   return `
+  <div style="padding: 10px;">
     <div class="card function-card">
       <div class="card-header bg-light">
         <div class="d-flex justify-content-between align-items-center">
@@ -105,16 +106,36 @@ function createFunctionCard(fn, index, isRead) {
         </form>
       </div>
     </div>
+  </div>
   `;
 }
 
 /**
  * 加载合约实例
  * @param {string} address - 合约地址
- * @param {Object} contract - 合约对象
+ * @param {Object} contract - 合约对象，如果未提供，将尝试从contract.js获取
  */
 export async function loadContractInstance(address, contract) {
-  if (!contract || !address) return;
+  console.log('Loading contract instance:', address)
+  // 如果未提供contract参数，尝试从contract.js获取currentContract
+  if (!contract) {
+    try {
+      // 动态导入getCurrentContract以避免循环依赖
+      const { getCurrentContract } = await import('./contract.js');
+      contract = getCurrentContract();
+    } catch (error) {
+      console.error('Error getting current contract:', error);
+    }
+    
+    if (!contract) {
+      showToast('Error', 'Contract ABI not found');
+      return;
+    }
+  }
+  if (!address) {
+    showToast('Error', 'Contract address not specified');
+    return;
+  }
 
   try {
     // 区分读取和写入函数
@@ -132,7 +153,7 @@ export async function loadContractInstance(address, contract) {
     // 显示读取函数
     const readFunctions = document.getElementById('readFunctions');
     if (readFns.length > 0) {
-      readFunctions.innerHTML = readFns.map((fn, index) => createFunctionCard(fn, index, true)).join('');
+      readFunctions.innerHTML = readFns.map((fn, index) => renderFunctionCard(fn, index, true)).join('');
     } else {
       readFunctions.innerHTML = '<p class="text-center text-muted">无可用读取函数</p>';
     }
@@ -140,7 +161,7 @@ export async function loadContractInstance(address, contract) {
     // 显示写入函数
     const writeFunctions = document.getElementById('writeFunctions');
     if (writeFns.length > 0) {
-      writeFunctions.innerHTML = writeFns.map((fn, index) => createFunctionCard(fn, index, false)).join('');
+      writeFunctions.innerHTML = writeFns.map((fn, index) => renderFunctionCard(fn, index, false)).join('');
     } else {
       writeFunctions.innerHTML = '<p class="text-center text-muted">无可用写入函数</p>';
     }
@@ -153,7 +174,17 @@ export async function loadContractInstance(address, contract) {
 
     // 设置函数调用事件
     document.querySelectorAll('.function-form').forEach(form => {
-      form.addEventListener('submit', e => handleFunctionCall(e, contract));
+      const isRead = form.querySelector('button[type="submit"]').dataset.isRead === "true";
+      const signerType = currentSigner().type;
+
+      // 根据函数类型和signer类型选择合适的处理函数
+      if (isRead) {
+        form.addEventListener('submit', e => readonlyCall(e, contract));
+      } else if (signerType === 'wallet') {
+        form.addEventListener('submit', e => walletCall(e, contract));
+      } else {
+        form.addEventListener('submit', e => writeCall(e, contract));
+      }
     });
 
     // 设置清除结果按钮
@@ -175,15 +206,17 @@ export async function loadContractInstance(address, contract) {
  * @param {Event} e - 表单提交事件
  * @param {Object} contract - 合约对象
  */
-async function handleFunctionCall(e, contract) {
+/**
+ * 处理只读函数调用
+ * @param {Event} e - 表单提交事件
+ * @param {Object} contract - 合约对象
+ */
+async function readonlyCall(e, contract) {
   e.preventDefault();
   const form = e.target;
   const functionName = form.dataset.fnName;
-  const isPaayable = form.dataset.fnPayable === 'true';
   const address = document.getElementById('contractAddress').value;
-  const isRead = form.querySelector('button[type="submit"]').dataset.isRead === "true";
-  const signer = currentSigner();
-
+  
   if (!address || !functionName || !contract) {
     showToast('Error', 'Missing contract address or function name');
     return;
@@ -196,90 +229,34 @@ async function handleFunctionCall(e, contract) {
   });
 
   const options = {};
-  if (isPaayable) {
-    const valueInput = form.querySelector('.function-value');
-    if (valueInput && valueInput.value.trim()) {
-      options.value = valueInput.value.trim();
-    }
-  }
-
   const resultElement = form.querySelector('.function-result');
   const resultPre = resultElement.querySelector('pre');
 
   try {
     const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
 
-    // 如果不是读取函数且使用的是钱包类型的签名者
-    if (!isRead && signer.type === 'wallet') {
-      // 准备调用合约的交易数据
-      const contractABI = contract.abi;
-      const functionABI = contractABI.find(item => item.name === functionName);
-      
-      // 调用prepare-call API处理编码和准备交易
-      const response = await fetch('/api/contract/prepare-call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: signer.address,
-          to: address,
-          contractABI,
-          functionName,
-          args,
-          value: options.value ? options.value : undefined
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to prepare transaction: ${response.statusText}`);
-      }
-      
-      const prepareData = await response.json();
-      
-      // 通过MetaMask发送交易
-      if (!window.ethereum) {
-        throw new Error('MetaMask或其他兼容钱包未安装');
-      }
-      
-      try {
-        // 发送交易
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [prepareData.txData],
-        });
-        
-        resultElement.style.display = 'block';
-        resultPre.textContent = `交易已提交，交易哈希: ${txHash}\n请等待交易确认。`;
-        resultElement.classList.remove('text-danger');
-        resultElement.classList.add('text-success');
-      } catch (walletError) {
-        console.error('钱包交易错误:', walletError);
-        throw new Error(`钱包交易失败: ${walletError.message}`);
-      }
+    // 调用合约函数
+    const data = await callContractFunction(
+      address,
+      contract.contractName,
+      functionName,
+      args,
+      options
+    );
+
+    resultElement.style.display = 'block';
+
+    if (data.success) {
+      resultPre.textContent = typeof data.result === 'object' ?
+        JSON.stringify(data.result, null, 2) : data.result;
+      resultElement.classList.remove('text-danger');
+      resultElement.classList.add('text-success');
     } else {
-      // 原有逻辑 - 直接通过API调用合约函数
-      const data = await callContractFunction(
-        address,
-        contract.contractName,
-        functionName,
-        args,
-        options
-      );
-
-      resultElement.style.display = 'block';
-
-      if (data.success) {
-        resultPre.textContent = typeof data.result === 'object' ?
-          JSON.stringify(data.result, null, 2) : data.result;
-        resultElement.classList.remove('text-danger');
-        resultElement.classList.add('text-success');
-      } else {
-        resultPre.textContent = data.error || '未知错误';
-        resultElement.classList.remove('text-success');
-        resultElement.classList.add('text-danger');
-      }
+      resultPre.textContent = data.error || '未知错误';
+      resultElement.classList.remove('text-success');
+      resultElement.classList.add('text-danger');
     }
 
     if (window.hljs) {
@@ -294,11 +271,185 @@ async function handleFunctionCall(e, contract) {
   } finally {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    if (signer.type === 'wallet' && !isRead) {
-      submitBtn.textContent = '使用钱包发送';
-    } else {
-      submitBtn.textContent = isRead ? '调用' : '发送';
+    submitBtn.textContent = '调用';
+  }
+}
+
+/**
+ * 处理常规写入函数调用
+ * @param {Event} e - 表单提交事件
+ * @param {Object} contract - 合约对象
+ */
+async function writeCall(e, contract) {
+  e.preventDefault();
+  const form = e.target;
+  const functionName = form.dataset.fnName;
+  const isPayable = form.dataset.fnPayable === 'true';
+  const address = document.getElementById('contractAddress').value;
+  
+  if (!address || !functionName || !contract) {
+    showToast('Error', 'Missing contract address or function name');
+    return;
+  }
+
+  const args = [];
+  const inputs = form.querySelectorAll('.function-input');
+  inputs.forEach(input => {
+    args.push(input.value.trim());
+  });
+
+  const options = {};
+  if (isPayable) {
+    const valueInput = form.querySelector('.function-value');
+    if (valueInput && valueInput.value.trim()) {
+      options.value = valueInput.value.trim();
     }
+  }
+
+  const resultElement = form.querySelector('.function-result');
+  const resultPre = resultElement.querySelector('pre');
+
+  try {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+
+    // 调用合约函数
+    const data = await callContractFunction(
+      address,
+      contract.contractName,
+      functionName,
+      args,
+      options
+    );
+
+    resultElement.style.display = 'block';
+
+    if (data.success) {
+      resultPre.textContent = typeof data.result === 'object' ?
+        JSON.stringify(data.result, null, 2) : data.result;
+      resultElement.classList.remove('text-danger');
+      resultElement.classList.add('text-success');
+    } else {
+      resultPre.textContent = data.error || '未知错误';
+      resultElement.classList.remove('text-success');
+      resultElement.classList.add('text-danger');
+    }
+
+    if (window.hljs) {
+      window.hljs.highlightElement(resultPre);
+    }
+  } catch (error) {
+    console.error('Error calling function:', error);
+    resultElement.style.display = 'block';
+    resultPre.textContent = error.message;
+    resultElement.classList.remove('text-success');
+    resultElement.classList.add('text-danger');
+  } finally {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = false;
+    submitBtn.textContent = '发送';
+  }
+}
+
+/**
+ * 处理需要钱包交互的函数调用
+ * @param {Event} e - 表单提交事件
+ * @param {Object} contract - 合约对象
+ */
+async function walletCall(e, contract) {
+  e.preventDefault();
+  const form = e.target;
+  const functionName = form.dataset.fnName;
+  const isPayable = form.dataset.fnPayable === 'true';
+  const address = document.getElementById('contractAddress').value;
+  const signer = currentSigner();
+  
+  if (!address || !functionName || !contract) {
+    showToast('Error', 'Missing contract address or function name');
+    return;
+  }
+
+  const args = [];
+  const inputs = form.querySelectorAll('.function-input');
+  inputs.forEach(input => {
+    args.push(input.value.trim());
+  });
+
+  const options = {};
+  if (isPayable) {
+    const valueInput = form.querySelector('.function-value');
+    if (valueInput && valueInput.value.trim()) {
+      options.value = valueInput.value.trim();
+    }
+  }
+
+  const resultElement = form.querySelector('.function-result');
+  const resultPre = resultElement.querySelector('pre');
+
+  try {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+
+    // 准备调用合约的交易数据
+    const contractABI = contract.abi;
+    const functionABI = contractABI.find(item => item.name === functionName);
+    
+    // 调用prepare-call API处理编码和准备交易
+    const response = await fetch('/api/contract/prepare-call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: signer.address,
+        to: address,
+        contractABI,
+        functionName,
+        args,
+        value: options.value ? options.value : undefined
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to prepare transaction: ${response.statusText}`);
+    }
+    
+    const prepareData = await response.json();
+    
+    // 通过MetaMask发送交易
+    if (!window.ethereum) {
+      throw new Error('MetaMask或其他兼容钱包未安装');
+    }
+    
+    try {
+      // 发送交易
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [prepareData.txData],
+      });
+      
+      resultElement.style.display = 'block';
+      resultPre.textContent = `交易已提交，交易哈希: ${txHash}\n请等待交易确认。`;
+      resultElement.classList.remove('text-danger');
+      resultElement.classList.add('text-success');
+    } catch (walletError) {
+      console.error('钱包交易错误:', walletError);
+      throw new Error(`钱包交易失败: ${walletError.message}`);
+    }
+
+    if (window.hljs) {
+      window.hljs.highlightElement(resultPre);
+    }
+  } catch (error) {
+    console.error('Error calling function:', error);
+    resultElement.style.display = 'block';
+    resultPre.textContent = error.message;
+    resultElement.classList.remove('text-success');
+    resultElement.classList.add('text-danger');
+  } finally {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = false;
+    submitBtn.textContent = '使用钱包发送';
   }
 }
 
@@ -322,9 +473,45 @@ export function initContractCallView(contract) {
 }
 
 /**
- * 获取缓存的合约实例
- * @returns {Object} 合约实例缓存
+ * 渲染合约交互界面
+ * @returns {string} 合约交互HTML元素
  */
-export function getContractInstances() {
-  return contractInstances;
+export function renderContractCall() {
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">合约交互</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="contractAddress" class="form-label">合约地址</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="contractAddress" placeholder="输入已部署的合约地址">
+            <button class="btn btn-primary" id="loadContractBtn">加载合约</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6" style="padding: 10px;">
+            <div class="card">
+              <h5>读取函数</h5>
+              <div id="readFunctions">
+                <p class="text-center text-muted">请先加载合约</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6" style="padding: 10px;">
+            <div class="card">
+              <h5>写入函数</h5>
+              <div id="writeFunctions">
+                <p class="text-center text-muted">请先加载合约</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
