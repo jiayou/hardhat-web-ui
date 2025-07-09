@@ -218,8 +218,8 @@ async function handleFunctionCall(e, contract) {
       const contractABI = contract.abi;
       const functionABI = contractABI.find(item => item.name === functionName);
       
-      // 调用/api/prepare-call API处理编码和准备交易
-      const response = await fetch('/api/prepare-call', {
+      // 调用prepare-call API处理编码和准备交易
+      const response = await fetch('/api/contract/prepare-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -179,7 +179,7 @@ async function handleWalletDeploy(contract, args, deployResult, onDeploySuccess)
         <p>未检测到MetaMask或其他以太坊钱包</p>
       </div>
     `;
-    // return;
+    return;
   }
   
   try {
@@ -190,7 +190,7 @@ async function handleWalletDeploy(contract, args, deployResult, onDeploySuccess)
       </div>
     `;
     const deployValue = document.getElementById('deployValue').value || '0';
-    await fetch('/api/prepare-deploy', {
+    const prepareData = await fetch('/api/contract/prepare-deploy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -204,78 +204,78 @@ async function handleWalletDeploy(contract, args, deployResult, onDeploySuccess)
       }),
     }).then(response => response.json())
 
-      // 2. 请求钱包发送交易，等待确认
-      deployResult.innerHTML = `
-        <div class="alert alert-warning">
-          <h5>交易已提交!</h5>
-          <p>交易哈希: <strong>${txHash}</strong></p>
-          <p>等待交易确认...</p>
-          <div class="progress mt-2">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
-          </div>
-        </div>
-      `;
+    // 2. 请求钱包发送交易
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [prepareData.txData],
+    });
 
-      const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [prepareData.txData],
-      });
-      
+    // 3. 等待交易
+    deployResult.innerHTML = `
+      <div class="alert alert-warning">
+        <h5>交易已提交!</h5>
+        <p>交易哈希: <strong>${txHash}</strong></p>
+        <p>等待交易确认...</p>
+        <div class="progress mt-2">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+        </div>
+      </div>
+    `;
+  
+    // 4. 等待交易确认并获取合约地址
+    // 需要等待交易被确认，然后获取合约地址
+    // 这里可以添加一个轮询机制来检查交易状态
+    // 或者监听以太坊的交易确认事件
     
-      // 4. 等待交易确认并获取合约地址
-      // 需要等待交易被确认，然后获取合约地址
-      // 这里可以添加一个轮询机制来检查交易状态
-      // 或者监听以太坊的交易确认事件
-      
-      // 简单实现：等待一段时间后检查交易收据
-      setTimeout(async () => {
-        try {
-          const receipt = await window.ethereum.request({
-            method: 'eth_getTransactionReceipt',
-            params: [txHash],
+    // 简单实现：等待一段时间后检查交易收据
+    setTimeout(async () => {
+      try {
+        const receipt = await window.ethereum.request({
+          method: 'eth_getTransactionReceipt',
+          params: [txHash],
+        });
+        
+        if (receipt && receipt.contractAddress) {
+          // 部署成功
+          deployResult.innerHTML = `
+            <div class="alert alert-success">
+              <h5>部署成功!</h5>
+              <p>合约地址: <strong>${receipt.contractAddress}</strong></p>
+              <button class="btn btn-sm btn-outline-primary copy-btn" data-address="${receipt.contractAddress}">复制地址</button>
+            </div>
+          `;
+          
+          // 设置复制按钮点击事件
+          document.querySelector('.copy-btn').addEventListener('click', function() {
+            navigator.clipboard.writeText(this.getAttribute('data-address'));
+            showToast('Success', '合约地址已复制到剪贴板');
           });
           
-          if (receipt && receipt.contractAddress) {
-            // 部署成功
-            deployResult.innerHTML = `
-              <div class="alert alert-success">
-                <h5>部署成功!</h5>
-                <p>合约地址: <strong>${receipt.contractAddress}</strong></p>
-                <button class="btn btn-sm btn-outline-primary copy-btn" data-address="${receipt.contractAddress}">复制地址</button>
-              </div>
-            `;
-            
-            // 设置复制按钮点击事件
-            document.querySelector('.copy-btn').addEventListener('click', function() {
-              navigator.clipboard.writeText(this.getAttribute('data-address'));
-              showToast('Success', '合约地址已复制到剪贴板');
-            });
-            
-            // 调用部署成功回调
-            if (typeof onDeploySuccess === 'function') {
-              onDeploySuccess(receipt.contractAddress);
-            }
-          } else {
-            // 交易还未确认，提示用户可以稍后在区块浏览器中查看
-            deployResult.innerHTML = `
-              <div class="alert alert-info">
-                <h5>交易已提交</h5>
-                <p>交易哈希: <strong>${txHash}</strong></p>
-                <p>交易尚未被确认，请稍后在区块浏览器中查看结果</p>
-              </div>
-            `;
+          // 调用部署成功回调
+          if (typeof onDeploySuccess === 'function') {
+            onDeploySuccess(receipt.contractAddress);
           }
-        } catch (error) {
-          console.error('获取交易收据失败:', error);
+        } else {
+          // 交易还未确认，提示用户可以稍后在区块浏览器中查看
           deployResult.innerHTML = `
-            <div class="alert alert-warning">
-              <h5>交易状态未知</h5>
+            <div class="alert alert-info">
+              <h5>交易已提交</h5>
               <p>交易哈希: <strong>${txHash}</strong></p>
-              <p>无法获取交易状态: ${error.message}</p>
+              <p>交易尚未被确认，请稍后在区块浏览器中查看结果</p>
             </div>
           `;
         }
-      }, 5000); // 等待5秒后检查
+      } catch (error) {
+        console.error('获取交易收据失败:', error);
+        deployResult.innerHTML = `
+          <div class="alert alert-warning">
+            <h5>交易状态未知</h5>
+            <p>交易哈希: <strong>${txHash}</strong></p>
+            <p>无法获取交易状态: ${error.message}</p>
+          </div>
+        `;
+      }
+    }, 5000); // 等待5秒后检查
 
   } catch (error) {
     console.error('Error in wallet deploy:', error);

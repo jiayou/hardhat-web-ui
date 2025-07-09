@@ -208,7 +208,7 @@ async function getAccountDetails(provider, address) {
   const isContract = code && code !== '0x';
 
   // 通用的网络信息
-  const gasPrice = null // await provider.getGasPrice();
+  const gasPrice = (await httpProvider.getFeeData()).gasPrice
   const blockNumber = await provider.getBlockNumber();
 
   // 根据账户类型返回不同字段
@@ -372,7 +372,7 @@ async function walletTransaction(from, to, amount, signedTx = null, provider) {
       transaction,
       networkData: {
         chainId,
-        gasPrice: latestBlock.baseFeePerGas || await provider.getGasPrice(),
+        gasPrice: latestBlock.baseFeePerGas || (await httpProvider.getFeeData()).gasPrice,
         nonce: await provider.getTransactionCount(from, "latest"),
       },
       message: "请在前端使用钱包对此交易进行签名后，将签名后的交易数据发送回服务器。"
