@@ -20,8 +20,6 @@ router.get('/signer', async (req, res) => {
   }
 });
 
-
-
 // 转账操作
 router.post('/transfer', async (req, res) => {
   console.log('transfer', req.body);
@@ -30,36 +28,46 @@ router.post('/transfer', async (req, res) => {
 
     console.log('from:', from);
     console.log('to:', to);
-    console.log('amount:', amount);
+    console.log('amount (ETH):', amount);
+    
+    // 将ETH转换为十六进制Wei值
+    const valueInWei = amount * 1e18; // 转换为Wei
+    const valueInHex = '0x' + parseInt(valueInWei).toString(16);
+    console.log('valueInHex:', valueInHex);
 
     const { httpProvider } = req.app.locals;
 
-    // 使用ethereum服务发送交易
-    const result = await ethereum.sendTransaction(httpProvider, from, to, amount);
-    res.json(result);
+    // 构建交易对象
+    const transaction = {
+      from: from,
+      to: to,
+      value: amount,
+      gas: "0x10086", // 防止gas不足
+    };
+
+    const txHash = await httpProvider.send("eth_sendTransaction", [transaction]);
+    
+    // 等待交易被确认
+    // 注意：需要等待一段时间让交易被打包
+    let receipt = null;
+    let attempts = 0;
+    while (!receipt && attempts < 10) {
+      receipt = await httpProvider.getTransactionReceipt(txHash);
+      if (!receipt) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+        attempts++;
+      }
+    }
+
+    res.json({
+      transactionHash: txHash,
+      receipt: receipt ? handleResult(receipt) : { status: "pending" }
+    });
   } catch (error) {
     console.error('Error executing transfer:', error);
     res.status(500).json({ error: error.message || 'Failed to execute transfer' });
   }
 })
-
-
-// 签名交易操作
-router.post('/wallet_transfer', async (req, res) => {
-  console.log(req.body);
-  try {
-    const { from, to, signedTx } = req.body;
-    const { httpProvider } = req.app.locals;
-
-    // 发送签名过的交易
-    const result = await ethereum.walletTransaction(httpProvider, from, to, signedTx);
-    res.json(result);
-  } catch (error) {
-    console.error('Error executing transfer:', error);
-    res.status(500).json({ error: error.message || 'Failed to execute transfer' });
-  }
-})
-
 
 // 准备转账交易数据
 router.post('/prepare-transfer', async (req, res) => {
@@ -89,7 +97,10 @@ router.post('/prepare-transfer', async (req, res) => {
     const nonce = await httpProvider.getTransactionCount(from, 'latest');
     const nonceHex = '0x' + nonce.toString(16);
     
-    const valueInHex = amount // 前端已经处理过，这里直接使用
+    // 前端传入的是ETH金额，这里转换为十六进制Wei值
+    const valueInWei = amount * 1e18; // 转换为Wei
+    const valueInHex = '0x' + parseInt(valueInWei).toString(16);
+    console.log('valueInHex:', valueInHex);
 
     // 构建完整的交易数据
     const txData = {

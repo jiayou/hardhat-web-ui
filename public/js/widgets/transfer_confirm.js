@@ -2,7 +2,7 @@
  * 转账确认组件
  */
 
-import { showToast, shortenAddress } from '../utils.js';
+import { showToast } from '../utils.js';
 
 /**
  * 转账确认模态框组件
@@ -10,16 +10,29 @@ import { showToast, shortenAddress } from '../utils.js';
 const TransferConfirm = {
   /**
    * 显示转账确认对话框
-   * @param {Object} options - 配置选项
-   * @param {string} options.fromAddress - 发送方地址
-   * @param {string} options.targetAddress - 接收方地址
-   * @param {string} options.amount - 转账金额
-   * @param {string} options.unit - 金额单位
-   * @param {string} options.valueInHex - 十六进制表示的wei值
-   * @param {string} options.signerType - 签名者类型（wallet或其他）
+   * @param {Object} txData - 转账数据
+   * txData: Object { 
+      chainId: "0x7a69"
+      from: "0x1111111111111111111111111111111111111111"
+      to: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      gas: "0x5208"
+      gasPrice: "0x3bf36bd6"
+      nonce: "0x0"
+      value: "0x1bc16d674ec80000"
+    }
    */
-  show: function(options) {
-    const { fromAddress, targetAddress, amount, unit, valueInHex, signerType } = options;
+  show: function(txData) {
+    // 解析交易数据
+    const fromAddress = txData.from;
+    const targetAddress = txData.to;
+    // 将十六进制的value转换为ETH显示值
+    const valueInWei = parseInt(txData.value, 16);
+    const amount = (valueInWei / 1e18).toFixed(6); // 转换为ETH并保留6位小数
+    const gas = parseInt(txData.gas, 16);
+    const gasPrice = parseInt(txData.gasPrice, 16) / 1e9; // 转换为Gwei
+    const nonce = parseInt(txData.nonce, 16);
+    const chainId = parseInt(txData.chainId, 16);
+    
     console.log("amount", amount)
 
     // 移除可能存在的旧模态框
@@ -38,10 +51,41 @@ const TransferConfirm = {
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <p>您即将从账户 <strong>${shortenAddress(fromAddress)}</strong> 转账到:</p>
-              <p>接收地址: <strong>${shortenAddress(targetAddress)}</strong></p>
-              <p>金额: <strong id="transferAmount">${amount} ${unit}</strong></p>
-              <p>十六进制Wei值: <strong>${valueInHex}</strong></p>
+              <h6 class="mb-3">您即将确认以下交易：</h6>
+              <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                  <tbody>
+                    <tr>
+                      <th class="table-light" style="width: 25%">发送地址</th>
+                      <td><code>${fromAddress}</code></td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">接收地址</th>
+                      <td><code>${targetAddress}</code></td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">金额</th>
+                      <td><strong id="transferAmount">${amount} ETH</strong></td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">Gas上限</th>
+                      <td>${gas}</td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">Gas价格</th>
+                      <td>${gasPrice} Gwei</td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">Nonce</th>
+                      <td>${nonce}</td>
+                    </tr>
+                    <tr>
+                      <th class="table-light">链ID</th>
+                      <td>${chainId}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <div id="txStatusContainer" class="mt-3 d-none">
                 <div class="alert alert-info">
                   <div class="d-flex align-items-center">
@@ -55,9 +99,7 @@ const TransferConfirm = {
             </div>
             <div class="modal-footer" id="modalButtons">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">取消</button>
-              ${signerType === 'wallet' ?
-                '<button type="button" class="btn btn-danger" id="walletTransferBtn">钱包转账</button>' :
-                '<button type="button" class="btn btn-primary" id="confirmTransferBtn">确认转账</button>'}
+              <button type="button" class="btn btn-danger" id="walletTransferBtn">钱包转账</button>
               <button type="button" class="btn btn-success d-none" id="closeBtn" data-bs-dismiss="modal">关闭</button>
             </div>
           </div>
@@ -72,14 +114,14 @@ const TransferConfirm = {
     const modal = new bootstrap.Modal(document.getElementById('transferConfirmModal'));
     modal.show();
 
-    this._setupEventHandlers(modal, fromAddress, targetAddress, valueInHex, signerType);
+    this._setupEventHandlers(modal, txData);
   },
 
   /**
    * 设置事件处理器
    * @private
    */
-  _setupEventHandlers: function(modal, fromAddress, targetAddress, valueInHex, signerType) {
+  _setupEventHandlers: function(modal, txData) {
     // 添加显示交易状态的函数
     const showTxStatus = (message, isError = false) => {
       const statusContainer = document.getElementById('txStatusContainer');
@@ -110,128 +152,34 @@ const TransferConfirm = {
       }
     };
 
-    // 通用交易处理函数
-    const _handleTransaction = async (executeTransactionFn, initialMessage) => {
-      try {
-        // 更新UI，显示处理中状态
-        showTxStatus(initialMessage);
-        updateButtonsForTx();
 
-        // 执行特定的交易逻辑
-        const result = await executeTransactionFn();
-
-        // 显示成功消息
-        showTxStatus(`${result.successMessage} ${result.transactionHash || ''}`);
-        showToast('Success', result.toastMessage);
-
-        // 显示关闭按钮
-        updateButtonsForTx(true);
-
-        // 显示交易结果（如果需要）
-        if (result.logDetails) {
-          console.log(result.logDetails, result);
-        }
-
-        // 设置关闭模态框定时器
-        setTimeout(() => {
-          modal.hide();
-          document.getElementById('transferConfirmModal').remove();
-          window.location.reload();
-        }, 30000);
-
-      } catch (error) {
-        console.error(`${error.context || '交易'}出错:`, error);
-        showTxStatus(`${error.context || '交易'}出错: ${error.message}`, true);
-        showToast('Error', `${error.context || '交易'}出错: ${error.message}`);
-        // 显示关闭按钮
-        updateButtonsForTx(true);
-      }
-    };
-
-    // 标准转账的执行函数
-    const _executeStandardTransfer = async () => {
-      const response = await fetch('/api/transfer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          to: targetAddress,
-          amount: valueInHex, // 使用十六进制wei值
-          unit: 'hex' // 标识单位为十六进制
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        const error = new Error(result.error || '未知错误');
-        error.context = '转账失败';
-        throw error;
-      }
-
-      return {
-        transactionHash: result.transactionHash || '',
-        successMessage: '转账成功！交易哈希:',
-        toastMessage: '转账成功！'
-      };
-    };
-
-    // 钱包转账的执行函数
-    const _executeWalletTransfer = async () => {
-      // 第一步：准备交易数据
-      const response = await fetch('/api/prepare-transfer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          to: targetAddress,
-          amount: valueInHex, // 使用十六进制wei值
-          unit: 'hex' // 标识单位为十六进制
-        })
-      });
-
-      const data = await response.json();
-      const txData = data.txData;
-
-      // 确保MetaMask已连接并有权限
-      if (!window.ethereum) {
-        throw new Error("MetaMask未安装或不可用");
-      }
-
+    // 监听钱包转账按钮
+    document.getElementById('walletTransferBtn')?.addEventListener('click', () => {
       showTxStatus('请在钱包中确认交易...');
 
       // 使用MetaMask直接发送交易
       console.log('MetaMask 发起转账，请耐心等待钱包确认');
-      const txHash = await window.ethereum.request({
+      window.ethereum.request({
         method: 'eth_sendTransaction',
         params: [txData]
+      })
+      .then((txHash) => {
+        console.log('Transaction sent with hash:', txHash);
+        // 显示交易哈希
+        showTxStatus('交易已发送！交易哈希: ' + txHash);
+        showToast('Success', '交易已发送！交易哈希: ' + txHash);
+        // 显示关闭按钮
+        updateButtonsForTx(true);
+      })
+      .catch((error) => {
+        console.error('Error sending transaction:', error);
+        showTxStatus('交易失败: ' + error.message, true);
+        showToast('Error', '交易失败: ' + error.message);
+        // 显示关闭按钮
+        updateButtonsForTx(true);
       });
-
-      console.log('Transaction sent with hash:', txHash);
-
-      return {
-        transactionHash: txHash,
-        from: fromAddress,
-        to: targetAddress,
-        successMessage: '转账已发送！交易哈希:',
-        toastMessage: '转账已发送！交易哈希: ' + txHash,
-        logDetails: '交易结果:'
-      };
-    };
-
-    // 监听标准转账按钮点击
-    document.getElementById('confirmTransferBtn')?.addEventListener('click', () => {
-      _handleTransaction(_executeStandardTransfer, '交易处理中，请稍候...');
     });
 
-    // 监听钱包转账按钮
-    document.getElementById('walletTransferBtn')?.addEventListener('click', () => {
-      _handleTransaction(_executeWalletTransfer, '准备钱包交易数据，请稍候...');
-    });
   }
 };
 

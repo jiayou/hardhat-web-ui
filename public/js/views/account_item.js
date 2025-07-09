@@ -88,7 +88,6 @@ const AccountItemView = async (address) => {
           </div>
         </div>
 
-        ${account.code && account.code !== '0x' ? '' : `
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
@@ -108,7 +107,6 @@ const AccountItemView = async (address) => {
             </div>
           </div>
         </div>
-        `}
 
         ${account.code && account.code !== '0x' ? `
         <div class="col-12 mb-4">
@@ -193,32 +191,62 @@ AccountItemView.init = (address) => {
       // 获取表单数据
       const targetAddress = transferBtn.getAttribute('data-address');
       const amount = document.getElementById('transferAmount').value;
-      const unit = document.getElementById('transferUnit').value;
-
-      // 转换为十六进制
-      let valueInWei = amount * 1e18; // 默认使用ETH
-      const valueInHex = '0x' + parseInt(valueInWei).toString(16);
-
-      // 获取当前签名者地址
       const fromAddress = currentSigner().address;
 
-      if (!fromAddress) {
-        showToast('Error', '请先连接钱包');
-        return;
+      // 检查当前签名者类型
+      if (currentSigner().type === 'wallet') {
+
+        // 确保MetaMask已连接并有权限
+        if (!window.ethereum) {
+          // DEBUG
+          // throw new Error("MetaMask未安装或不可用");
+        }
+
+        fetch('/api/prepare-transfer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: targetAddress,
+            amount: amount // 金额单位为ETH
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            showToast('Error', '准备转账失败:' + statusText);
+            return;
+          }
+
+          response.json().then(data => {
+            // 显示转账确认框
+            console.log("prepare-transfer response: ", data);
+            TransferConfirm.show(data.txData);
+          })
+        })
+      }
+      else  // 测试账户，简化转账操作
+      {
+        fetch('/api/transfer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: targetAddress,
+            amount: amount // 金额单位为ETH
+          })
+        }).then(response => {
+          if (response.ok) {
+            showToast('Success', '转账成功');
+          }
+        }).catch(error => {
+          showToast('Error', '转账失败: ' + error.message);
+        })
       }
 
-      // 检查当前签名者类型
-      const signerType = currentSigner().type || 'hardhat';
-
-      // 显示转账确认框
-      TransferConfirm.show({
-        fromAddress,
-        targetAddress,
-        amount,
-        unit,
-        valueInHex,
-        signerType
-      });
     });
   }
 

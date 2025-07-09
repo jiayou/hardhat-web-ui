@@ -340,6 +340,8 @@ function renderWalletAccountsList() {
 
     // 选中hardhat选项
     document.getElementById('hardhatSigner').checked = true;
+    // 确保hardhat选择框是启用状态
+    document.getElementById('hardhatSelect').disabled = false;
   }
 }
 

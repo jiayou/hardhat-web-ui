@@ -271,118 +271,6 @@ async function getAccountDetails(provider, address) {
 
 
 
-//=============================================================== 转账功能
-async function sendTransaction(provider, from, to, amount) {
-  try {
-    // 构建交易对象
-    const transaction = {
-      to: to,
-      value: amount,
-      gasLimit: 21000, // 标准转账 gas 限制
-    };
-
-    // 发送交易 - 使用JsonRpcProvider的send方法
-    // 添加from字段到交易对象
-    transaction.from = from;
-    // 使用十六进制表示gas
-    transaction.gas = "0x5208"; // 21000 in hex
-    delete transaction.gasLimit;
-    const txHash = await provider.send("eth_sendTransaction", [transaction]);
-    
-    // 等待交易被确认
-    // 注意：需要等待一段时间让交易被打包
-    let receipt = null;
-    let attempts = 0;
-    while (!receipt && attempts < 10) {
-      receipt = await provider.getTransactionReceipt(txHash);
-      if (!receipt) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
-        attempts++;
-      }
-    }
-
-    return {
-      transactionHash: txHash,
-      receipt: receipt ? handleResult(receipt) : { status: "pending" }
-    };
-  } catch (error) {
-    console.error('Error sending transaction:', error);
-    throw error;
-  }
-}
-
-//=============================================================== 钱包交易功能
-/**
- * 处理已签名的交易或接收交易参数生成可用于钱包签名的数据
- * @param {string} from - 发送账户地址
- * @param {string} to - 接收账户地址
- * @param {string|number} amount - 交易金额（十六进制字符串或数字）
- * @param {string} signedTx - 已签名的交易数据（可选，如果前端已经使用钱包签名）
- * @param {object} provider - 以太坊提供者
- * @returns {object} 交易哈希和收据或待签名的交易数据
- */
-async function walletTransaction(from, to, amount, signedTx = null, provider) {
-  try {
-    // 情况1: 如果提供了已签名的交易数据，直接发送
-    if (signedTx) {
-      console.log('发送已签名的交易');
-      const txHash = await provider.send("eth_sendRawTransaction", [signedTx]);
-      console.log('交易已发送，哈希：', txHash);
-      
-      // 等待交易被确认
-      let receipt = null;
-      let attempts = 0;
-      
-      while (!receipt && attempts < 20) {
-        try {
-          receipt = await provider.getTransactionReceipt(txHash);
-        } catch (e) {
-          console.log('获取收据时出错，继续尝试...');
-        }
-        
-        if (!receipt) {
-          console.log(`等待交易确认，尝试 ${attempts + 1}/20...`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 等待2秒
-          attempts++;
-        }
-      }
-      
-      return {
-        transactionHash: txHash,
-        receipt: receipt ? handleResult(receipt) : { status: "pending" }
-      };
-    }
-    
-    // 情况2: 如果没有提供已签名的交易，返回交易数据供前端使用
-    // 构建交易对象 - 适用于钱包的格式
-    const transaction = {
-      from: from,
-      to: to,
-      value: typeof amount === 'number' ? '0x' + amount.toString(16) : amount,
-      gas: "0x5208", // 21000 in hex
-    };
-    
-    // 获取当前网络信息用于构建完整交易
-    const blockNumber = await provider.getBlockNumber();
-    const latestBlock = await provider.getBlock(blockNumber);
-    const chainId = await provider.getNetwork().then(network => network.chainId);
-    
-    // 返回交易信息和必要的元数据
-    return {
-      transaction,
-      networkData: {
-        chainId,
-        gasPrice: latestBlock.baseFeePerGas || (await httpProvider.getFeeData()).gasPrice,
-        nonce: await provider.getTransactionCount(from, "latest"),
-      },
-      message: "请在前端使用钱包对此交易进行签名后，将签名后的交易数据发送回服务器。"
-    };
-  } catch (error) {
-    console.error('钱包交易处理失败:', error);
-    throw error;
-  }
-}
-
 module.exports = {
   getBlockList,
   getBlockById,
@@ -392,7 +280,5 @@ module.exports = {
   listAccounts,
   getAccountDetails,
   getSigners,
-  sendTransaction,
-  walletTransaction,
   searchAccountTransactions
 };
