@@ -48,22 +48,23 @@ router.post('/transfer', async (req, res) => {
 
     console.log('transaction:', transaction);
     const txHash = await httpProvider.send("eth_sendTransaction", [transaction]);
-    
-    // 等待交易被确认
-    // 注意：需要等待一段时间让交易被打包
-    let receipt = null;
-    let attempts = 0;
-    while (!receipt && attempts < 10) {
-      receipt = await httpProvider.getTransactionReceipt(txHash);
-      if (!receipt) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
-        attempts++;
-      }
-    }
+
+    // 在前端等待交易被确认
+    // // 等待交易被确认
+    // // 注意：需要等待一段时间让交易被打包
+    // let receipt = null;
+    // let attempts = 0;
+    // while (!receipt && attempts < 10) {
+    //   receipt = await httpProvider.getTransactionReceipt(txHash);
+    //   if (!receipt) {
+    //     await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+    //     attempts++;
+    //   }
+    // }
 
     res.json({
-      transactionHash: txHash,
-      receipt: receipt ? handleResult(receipt) : { status: "pending" }
+      txHash: txHash,
+      // receipt: receipt ? handleResult(receipt) : { status: "pending" }
     });
   } catch (error) {
     console.error('Error executing transfer:', error);

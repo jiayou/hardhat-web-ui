@@ -6,6 +6,7 @@ import { showToast, shortenAddress } from '../utils.js';
 import TransferConfirm from '../widgets/transfer_confirm.js';
 import { currentSigner } from '../state.js';
 import { t } from '../i18n.js';
+import WaitReceipt from '../widgets/wait_receipt.js';
 
 
 /**
@@ -243,6 +244,7 @@ AccountItemView.init = (address) => {
           if (response.ok) {
             showToast(t('common.success'), t('wallet.transferSuccess'));
             response.json().then(data => {
+              WaitReceipt.show(data.txHash);
               console.log('转账成功', data)
             })
           }

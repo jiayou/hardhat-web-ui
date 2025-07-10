@@ -5,6 +5,7 @@
 import { showToast } from '../utils.js';
 import { currentSigner } from '../state.js';
 import TransferConfirm from '../widgets/transfer_confirm.js';
+import WaitReceipt from '../widgets/wait_receipt.js';
 
 // 合约实例缓存
 const contractInstances = {};
@@ -264,10 +265,6 @@ async function readonlyCall(e, contract) {
       resultElement.classList.remove('text-success');
       resultElement.classList.add('text-danger');
     }
-
-    if (window.hljs) {
-      window.hljs.highlightElement(resultPre);
-    }
   } catch (error) {
     console.error('Error calling function:', error);
     resultElement.style.display = 'block';
@@ -321,30 +318,30 @@ async function writeCall(e, contract) {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
 
     // 调用合约函数
-    const data = await callContractFunction(
+    callContractFunction(
       address,
       contract.contractName,
       functionName,
       args,
       options
-    );
+    )
+    .then( data => {
+      console.log(data)
+      WaitReceipt.show(data.txHash)
+      resultElement.style.display = 'block';
+  
+      if (data.success) {
+        resultPre.textContent = typeof data.result === 'object' ?
+          JSON.stringify(data.result, null, 2) : data.result;
+        resultElement.classList.remove('text-danger');
+        resultElement.classList.add('text-success');
+      } else {
+        resultPre.textContent = data.error || '未知错误';
+        resultElement.classList.remove('text-success');
+        resultElement.classList.add('text-danger');
+      }
+    });
 
-    resultElement.style.display = 'block';
-
-    if (data.success) {
-      resultPre.textContent = typeof data.result === 'object' ?
-        JSON.stringify(data.result, null, 2) : data.result;
-      resultElement.classList.remove('text-danger');
-      resultElement.classList.add('text-success');
-    } else {
-      resultPre.textContent = data.error || '未知错误';
-      resultElement.classList.remove('text-success');
-      resultElement.classList.add('text-danger');
-    }
-
-    if (window.hljs) {
-      window.hljs.highlightElement(resultPre);
-    }
   } catch (error) {
     console.error('Error calling function:', error);
     resultElement.style.display = 'block';
