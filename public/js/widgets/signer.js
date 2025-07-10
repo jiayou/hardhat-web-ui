@@ -1,6 +1,6 @@
 import { showToast, longerAddress, shortenAddress } from '../utils.js';
 import { currentSigner } from '../state.js';
-
+import { t } from '../i18n.js';
 let walletAccounts = [];
 
 async function testConnectedWalletAccounts() {
@@ -21,12 +21,12 @@ async function fetchConnectedWalletAccounts() {
     const accounts = await window.ethereum.request({
       method: 'eth_accounts'
     });
-    console.log('已连接的钱包账户:', accounts);
+    console.log(`${t('wallet.connectedAccounts')}:`, accounts);
     if (accounts && accounts.length > 0) {
       return accounts.map(addr => addr.toLowerCase());
     }
   } catch (error) {
-    console.error('获取已连接账户失败:', error);
+    console.error(`${t('wallet.fetchAccountsFailed')}:`, error);
   }
 
   return [];
@@ -63,14 +63,14 @@ export function openSignerDialog() {
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="signerDialogLabel">选择Signer</h5>
+            <h5 class="modal-title" id="signerDialogLabel" data-i18n="signer.selectSigner">选择Signer</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="signerAccount" id="hardhatSigner" value="hardhat" checked>
-                <label class="form-check-label" for="hardhatSigner">
+                <label class="form-check-label" for="hardhatSigner" data-i18n="signer.hardhatTestAccounts">
                   Hardhat测试账户
                 </label>
                 <div class="mt-2 mb-3" id="hardhatSignerList">
@@ -87,8 +87,8 @@ export function openSignerDialog() {
           <div class="modal-footer d-flex justify-content-between">
             <div id="currentSelectedAddress" class="text-muted"></div>
             <div>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-              <button type="button" class="btn btn-primary" id="confirmSigner">确认</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">取消</button>
+              <button type="button" class="btn btn-primary" id="confirmSigner" data-i18n="common.confirm">确认</button>
             </div>
           </div>
         </div>
@@ -123,9 +123,9 @@ export function openSignerDialog() {
   // 初始化当前选择的显示
   const currentSelectedAddressDiv = document.getElementById('currentSelectedAddress');
   if (signerAddress) {
-    currentSelectedAddressDiv.textContent = `当前选择: ${signerAddress}`;
+    currentSelectedAddressDiv.textContent = `${t('signer.currentSelection')}: ${signerAddress}`;
   } else {
-    currentSelectedAddressDiv.textContent = '请选择一个地址';
+    currentSelectedAddressDiv.textContent = t('signer.pleaseSelectAddress');
   }
 
   // 获取并填充Hardhat测试账户
@@ -151,13 +151,13 @@ export function openSignerDialog() {
     } else {
       const option = document.createElement('option');
       option.value = '';
-      option.textContent = '没有可用的Hardhat账户';
+      option.textContent = t('signer.noHardhatAccounts');
       option.disabled = true;
       selectElement.appendChild(option);
     }
   })
   .catch(error => {
-    showToast('获取Hardhat账户失败', error)
+    showToast(t('signer.hardhatFetchFailed'), error)
   });
 
   // 创建钱包账户列表
@@ -178,14 +178,14 @@ export function openSignerDialog() {
 
           // 更新当前选择的地址显示
           const selectedAddress = hardhatSelect.options[hardhatSelect.selectedIndex].value;
-          document.getElementById('currentSelectedAddress').textContent = `当前选择: ${selectedAddress}`;
+          document.getElementById('currentSelectedAddress').textContent = `${t('signer.currentSelection')}: ${selectedAddress}`;
 
         } else {
           // 禁用Hardhat下拉选择框
           hardhatSelect.disabled = true;
 
           // 钱包账户被选中
-          document.getElementById('currentSelectedAddress').textContent = `当前选择: ${this.value}`;
+          document.getElementById('currentSelectedAddress').textContent = `${t('signer.currentSelection')}: ${this.value}`;
 
         }
       }
@@ -195,7 +195,7 @@ export function openSignerDialog() {
   // 当hardhat select改变时更新当前选择的地址
   document.getElementById('hardhatSelect').addEventListener('change', function() {
     if (document.getElementById('hardhatSigner').checked) {
-      document.getElementById('currentSelectedAddress').textContent = `当前选择: ${this.value}`;
+      document.getElementById('currentSelectedAddress').textContent = `${t('signer.currentSelection')}: ${this.value}`;
     }
   });
 
@@ -225,7 +225,7 @@ export function openSignerDialog() {
       modal.hide();
       window.location.reload();
     } else {
-      showToast('错误', '请选择一个Signer地址', 'danger');
+      showToast(t('error.title'), t('signer.pleaseSelectSignerAddress'), 'danger');
     }
   });
 
@@ -270,7 +270,7 @@ function createWalletAccountItem(address, index, checked) {
   const label = document.createElement('label');
   label.className = 'form-check-label';
   label.htmlFor = `wallet-${index}`;
-  label.textContent = `钱包账户 ${address}`;
+  label.textContent = `${t('wallet.account')} ${address}`;
   
   labelContainer.appendChild(label);
 
@@ -285,7 +285,7 @@ function createWalletAccountItem(address, index, checked) {
   // 添加事件监听器更新当前选择的地址
   radio.addEventListener('change', function() {
     if (this.checked) {
-      currentSelectedAddressDiv.textContent = `当前选择: ${address}`;
+      currentSelectedAddressDiv.textContent = `${t('signer.currentSelection')}: ${address}`;
       // 禁用Hardhat下拉选择框
       document.getElementById('hardhatSelect').disabled = true;
     }
@@ -293,7 +293,7 @@ function createWalletAccountItem(address, index, checked) {
 
   // 如果是选中状态，初始化显示当前地址
   if (radio.checked) {
-      currentSelectedAddressDiv.textContent = `当前选择: ${address}`;
+      currentSelectedAddressDiv.textContent = `${t('signer.currentSelection')}: ${address}`;
   }
 
   radioDiv.appendChild(radio);
@@ -335,7 +335,7 @@ function renderWalletAccountsList() {
     // 如果没有钱包账户，显示提示信息
     const emptyItem = document.createElement('div');
     emptyItem.className = 'text-center text-muted p-3';
-    emptyItem.textContent = '没有连接的钱包账户';
+    emptyItem.textContent = t('wallet.noConnectedAccounts');
     walletRadioGroup.appendChild(emptyItem);
 
     // 选中hardhat选项
@@ -367,7 +367,7 @@ export function displayCurrentSigner() {
       signerDisplay.classList.remove('bg-light', 'text-dark');
     }
   } else {
-    signerDisplay.textContent = '请选择Signer';
+    signerDisplay.textContent = t('signer.pleaseSelect');
     signerDisplay.title = '';
   }
 }

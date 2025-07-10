@@ -5,6 +5,7 @@
 import { showToast, shortenAddress } from '../utils.js';
 import TransferConfirm from '../widgets/transfer_confirm.js';
 import { currentSigner } from '../state.js';
+import { t } from '../i18n.js';
 
 
 /**
@@ -42,7 +43,7 @@ const AccountItemView = async (address) => {
     const data = await fetchAccountDetails(address);
 
     if (!data.account) {
-      return `<div class="alert alert-danger m-5">账户 ${address} 未找到或网络错误</div>`;
+      return `<div class="alert alert-danger m-5">${t('error.notFound')}: ${address}</div>`;
     }
 
     const account = data.account;
@@ -51,15 +52,15 @@ const AccountItemView = async (address) => {
     return `
       <div class="row mt-4">
         <div class="col-12 mb-4">
-          <h2>账户详情</h2>
+          <h2 data-i18n="account.details">账户详情</h2>
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">账户信息</h5>
+              <h5 class="card-title" data-i18n="account.information">账户信息</h5>
               <div class="table-responsive">
                 <table class="table">
                   <tbody>
                     <tr>
-                      <th scope="row">地址</th>
+                      <th scope="row" data-i18n="account.address">地址</th>
                       <td>
                         <div class="d-flex align-items-center">
                           <code class="me-2">${address}</code>
@@ -70,16 +71,16 @@ const AccountItemView = async (address) => {
                       </td>
                     </tr>
                     <tr>
-                      <th scope="row">余额</th>
+                      <th scope="row" data-i18n="account.balance">余额</th>
                       <td>${(parseInt(account.balance) / 1e18).toFixed(6)} ETH</td>
                     </tr>
                     <tr>
-                      <th scope="row">交易数</th>
+                      <th scope="row" data-i18n="account.txCount">交易数</th>
                       <td>${account.transactionCount}</td>
                     </tr>
                     <tr>
-                      <th scope="row">代码</th>
-                      <td>${account.code && account.code !== '0x' ? '<span class="badge bg-info">合约账户</span>' : '<span class="badge bg-secondary">外部账户(EOA)</span>'}</td>
+                      <th scope="row" data-i18n="account.code">代码</th>
+                      <td>${account.code && account.code !== '0x' ? '<span class="badge bg-info" data-i18n="account.contractAccount">合约账户</span>' : '<span class="badge bg-secondary" data-i18n="account.externalAccount">外部账户(EOA)</span>'}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -91,18 +92,18 @@ const AccountItemView = async (address) => {
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">转账给他</h5>
+              <h5 class="card-title" data-i18n="account.transfer">转账给他</h5>
               <form id="transferForm" class="mt-3">
                 <div class="mb-3">
-                  <label for="transferAmount" class="form-label">转账金额</label>
+                  <label for="transferAmount" class="form-label" data-i18n="account.transferAmount">转账金额</label>
                   <div class="input-group">
-                    <input type="number" class="form-control" id="transferAmount" min="0" step="any" required placeholder="输入金额">
+                    <input type="number" class="form-control" id="transferAmount" min="0" step="any" required data-i18n-placeholder="account.amountPlaceholder" placeholder="输入金额">
                     <select class="form-select" id="transferUnit" style="max-width: 100px;">
                       <option value="ether" selected>ETH</option>
                     </select>
                   </div>
                 </div>
-                <button class="btn btn-primary" id="transferBtn" data-address="${address}">发起转账</button>
+                <button class="btn btn-primary" id="transferBtn" data-address="${address}" data-i18n="account.startTransfer">发起转账</button>
               </form>
             </div>
           </div>
@@ -112,7 +113,7 @@ const AccountItemView = async (address) => {
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">合约代码</h5>
+              <h5 class="card-title" data-i18n="account.contractCode">合约代码</h5>
               <textarea class="form-control mt-3 font-monospace" readonly style="height: 200px; font-family: monospace;">${account.code}</textarea>
             </div>
           </div>
@@ -122,33 +123,33 @@ const AccountItemView = async (address) => {
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">最近交易</h5>
+              <h5 class="card-title" data-i18n="account.recentTransactions">最近交易</h5>
               <div class="table-responsive">
                 <table class="table table-hover">
                   <thead>
                     <tr>
-                      <th>交易哈希</th>
-                      <th>类型</th>
-                      <th>对手方</th>
-                      <th>值</th>
+                      <th data-i18n="transaction.hash">交易哈希</th>
+                      <th data-i18n="transaction.status">类型</th>
+                      <th data-i18n="transaction.to">对手方</th>
+                      <th data-i18n="transaction.value">值</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${transactions && transactions.length > 0 ? transactions.map(tx => `
                       <tr>
                         <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
-                        <td>${tx.from.toLowerCase() === address.toLowerCase() ? '发出' : '接收'}</td>
+                        <td>${tx.from.toLowerCase() === address.toLowerCase() ? `<span data-i18n="transaction.sent">发出</span>` : `<span data-i18n="transaction.received">接收</span>`}</td>
                         <td>
                           ${tx.from.toLowerCase() === address.toLowerCase() ?
                             (tx.to ?
                               `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` :
-                              '合约创建') :
+                              `<span data-i18n="transaction.contractCreation">合约创建</span>`) :
                             `<a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a>`
                           }
                         </td>
                         <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
                       </tr>
-                    `).join('') : '<tr><td colspan="4" class="text-center">No transactions found</td></tr>'}
+                    `).join('') : '<tr><td colspan="4" class="text-center" data-i18n="transaction.noTransactions">没有找到交易</td></tr>'}
                   </tbody>
                 </table>
               </div>
@@ -159,8 +160,8 @@ const AccountItemView = async (address) => {
     `;
   } catch (error) {
     console.error('Error rendering account view:', error);
-    showToast('Error', 'Failed to load account data');
-    return `<div class="alert alert-danger m-5">Failed to load account data: ${error.message}</div>`;
+    showToast(t('common.error'), t('error.loadingError'));
+    return `<div class="alert alert-danger m-5">${t('error.loadingError')}: ${error.message}</div>`;
   }
 };
 
@@ -178,8 +179,8 @@ AccountItemView.init = (address) => {
     button.addEventListener('click', () => {
       const address = button.getAttribute('data-address');
       navigator.clipboard.writeText(address)
-        .then(() => showToast('Success', '地址已复制到剪贴板'))
-        .catch(err => showToast('Error', '复制失败: ' + err));
+        .then(() => showToast(t('common.success'), t('account.addressCopied')))
+        .catch(err => showToast(t('common.error'), t('account.copyFailed') + err));
     });
   });
 
@@ -215,7 +216,7 @@ AccountItemView.init = (address) => {
         })
         .then(response => {
           if (!response.ok) {
-            showToast('Error', '准备转账失败:' + statusText);
+            showToast(t('common.error'), t('wallet.prepareFailed') + statusText);
             return;
           }
 
@@ -240,7 +241,7 @@ AccountItemView.init = (address) => {
           })
         }).then(response => {
           if (response.ok) {
-            showToast('Success', '转账成功');
+            showToast(t('common.success'), t('wallet.transferSuccess'));
             response.json().then(data => {
               console.log('转账成功', data)
             })
@@ -250,7 +251,7 @@ AccountItemView.init = (address) => {
           }
         }).catch(error => {
           console.error('转账失败:', error);
-          showToast('Error', '转账失败: ' + error.message);
+          showToast(t('common.error'), t('wallet.transferFailed') + error.message);
         })
       }
 
