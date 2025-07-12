@@ -53,7 +53,7 @@ const TransactionConfirm = {
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="transactionConfirmModalLabel">确认转账</h5>
+              <h5 class="modal-title" id="transactionConfirmModalLabel">确认交易</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -257,8 +257,8 @@ const TransactionConfirm = {
         
         // 格式化回执内容
         const receipt = data.receipt;
-        const status = receipt.status === '0x1' ? '成功' : '失败';
-        const statusClass = receipt.status === '0x1' ? 'text-success' : 'text-danger';
+        const status = receipt.status === 1 ? '成功' : '失败';
+        const statusClass = receipt.status === 1 ? 'text-success' : 'text-danger';
         
         // 构建回执HTML
         let receiptHtml = `
@@ -271,11 +271,11 @@ const TransactionConfirm = {
                 </tr>
                 <tr>
                   <th class="table-light">区块高度</th>
-                  <td>${parseInt(receipt.blockNumber, 16)}</td>
+                  <td>${parseInt(receipt.blockNumber)}</td>
                 </tr>
                 <tr>
                   <th class="table-light">Gas使用量</th>
-                  <td>${parseInt(receipt.gasUsed, 16)}</td>
+                  <td>${parseInt(receipt.gasUsed)}</td>
                 </tr>
               </tbody>
             </table>
@@ -347,7 +347,7 @@ const TransactionConfirm = {
             clearInterval(pollInterval);
             
             const receipt = data.receipt;
-            const success = receipt.status === '0x1';
+            const success = receipt.status === 1;
             const statusContainer = document.getElementById('txStatusContainer');
             
             if (success) {
