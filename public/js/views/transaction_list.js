@@ -25,7 +25,6 @@ const TransactionListView = async () => {
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
             <h2>最近交易</h2>
-            <button id="refreshTxBtn" class="btn btn-outline-primary"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
             <div>
               <form id="txSearchForm" class="mt-3">
                 <div class="input-group mb-3">

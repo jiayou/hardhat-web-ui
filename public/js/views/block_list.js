@@ -3,10 +3,45 @@
  */
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
-import { getBatchSize, getCachedBlocks, getNextBlock, updateBlockCache, clearCache } from '../state.js';
+import { getBatchSize, clearCache } from '../state.js';
+
+// 区块缓存数据
+let blockData = [];
+let nextBlock = null; // 下一次加载的起始区块：null表示从最新区块开始；-1表示没有更多数据了。
+
+/**
+ * 更新区块缓存
+ * @param {Object} result - 包含区块数据和下一块信息的对象
+ */
+// 更新区块缓存
+const updateBlockCache = (result) => {
+  if (result.data) {
+    blockData = [...blockData, ...result.data];
+    nextBlock = result.nextBlock;
+    console.log('nextBlock:', nextBlock, 'blockData:', blockData.length);
+  }
+};
 
 
-
+/**
+ * 渲染单个区块行
+ * @param {Object} block - 区块数据
+ * @returns {string} 区块行的HTML内容
+ */
+const renderBlockRow = (block) => {
+  return `
+    <tr>
+      <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
+      <td>${formatDateTime(block.timestamp)}</td>
+      <td>${block.transactions ? block.transactions.length : 0}</td>
+      <td>${parseInt(block.gasUsed)}</td>
+      <td>${parseInt(block.gasLimit)}</td>
+      <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
+      <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${shortenAddress(block.hash)}</code></td>
+      <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
+    </tr>
+  `;
+};
 /**
  * 获取区块列表
  * @param {number} blockNum - 起始区块号
@@ -31,30 +66,13 @@ export async function fetchBlocks(blockNum = null, batchSize = getBatchSize()) {
  * 渲染区块列表
  * @returns {string} HTML内容
  */
-const renderBlockList = async () => {
-  try {
-    const batchSize = getBatchSize(); // 使用全局设置的批量大小
-    let blocks = getCachedBlocks(); // 从状态获取已缓存的区块列表
-    let nextBlock = getNextBlock(); // 获取下一批区块的起始区块号
-
-    // 如果没有缓存的区块数据，需要初始化加载
-    if (blocks.length === 0) {
-      const result = await fetchBlocks(null, batchSize); // 获取最新的一批区块
-      // 更新缓存
-      updateBlockCache(result);
-      // 重新获取更新后的缓存数据
-      blocks = getCachedBlocks();
-      nextBlock = getNextBlock();
-    }
+const renderBlockList = () => {
 
     return `
       <div class="row mt-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>区块列表</h2>
-            <button id="refreshBlocksBtn" class="btn btn-primary">
-              <i class="bi bi-arrow-clockwise"></i> 刷新
-            </button>
           </div>
 
           <div class="card">
@@ -74,18 +92,7 @@ const renderBlockList = async () => {
                     </tr>
                   </thead>
                   <tbody id="blockTableBody">
-                    ${blocks.map(block => `
-                      <tr>
-                        <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
-                        <td>${formatDateTime(block.timestamp)}</td>
-                        <td>${block.transactions ? block.transactions.length : 0}</td>
-                        <td>${parseInt(block.gasUsed)}</td>
-                        <td>${parseInt(block.gasLimit)}</td>
-                        <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
-                        <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${shortenAddress(block.hash)}</code></td>
-                        <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
-                      </tr>
-                    `).join('')}
+                    ${blockData.map(block => renderBlockRow(block)).join('')}
                   </tbody>
                 </table>
               </div>
@@ -100,171 +107,76 @@ const renderBlockList = async () => {
         </div>
       </div>
     `;
+};
+
+
+
+const loadMoreItems = async () => {
+  try {
+    if (nextBlock >= 0) {
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 加载中...';
+
+      const batchSize = getBatchSize();
+      const result = await fetchBlocks(nextBlock, batchSize);
+
+      if (result.data && result.data.length > 0) {
+        // 追加新区块到表格
+        const blockTableBody = document.getElementById('blockTableBody');
+        if (blockTableBody) {
+          const newBlocksHtml = result.data.map(block => renderBlockRow(block)).join('');
+          blockTableBody.insertAdjacentHTML('beforeend', newBlocksHtml);
+        }
+
+        // 更新缓存
+        updateBlockCache(result)
+
+        // 更新按钮状态
+        loadMoreBtn.disabled = result.nextBlock < 0;
+        loadMoreBtn.innerHTML = '加载更多';
+
+        // 如果没有更多区块可加载，禁用按钮
+        if (result.nextBlock < 0) {
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.innerHTML = '没有更多区块';
+        }
+      } else {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.innerHTML = '没有更多区块';
+      }
+    }
   } catch (error) {
-    console.error('Error rendering block list:', error);
-    showToast('Error', 'Failed to load blocks');
-    return `<div class="alert alert-danger m-5">Failed to load block list: ${error.message}</div>`;
-  }
-};
-
-/**
- * 生成分页组件
- * @param {number} currentPage - 当前页码
- * @param {number} totalPages - 总页数
- * @returns {string} 分页HTML
- */
-const generatePaginationItems = (currentPage, totalPages) => {
-  let items = [];
-
-  // 添加"上一页"按钮
-  items.push(`
-    <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
-      <a class="page-link" href="/block?page=${currentPage - 1}" data-page="${currentPage - 1}" ${currentPage <= 1 ? 'tabindex="-1" aria-disabled="true"' : ''} data-link>上一页</a>
-    </li>
-  `);
-
-  // 计算显示的页码范围
-  let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(totalPages, currentPage + 2);
-
-  // 确保显示至少5个页码（如果可能）
-  if (endPage - startPage < 4 && totalPages > 5) {
-    if (startPage === 1) {
-      endPage = Math.min(5, totalPages);
-    } else if (endPage === totalPages) {
-      startPage = Math.max(1, totalPages - 4);
+    console.error('加载更多区块失败:', error);
+    showToast('Error', '加载更多区块失败');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.innerHTML = '重试加载';
     }
   }
+}
 
-  // 添加第一页和省略号（如需要）
-  if (startPage > 1) {
-    items.push(`
-      <li class="page-item">
-        <a class="page-link" href="/block?page=1" data-page="1" data-link>1</a>
-      </li>
-    `);
-    if (startPage > 2) {
-      items.push('<li class="page-item disabled"><span class="page-link">...</span></li>');
-    }
-  }
-
-  // 添加页码
-  for (let i = startPage; i <= endPage; i++) {
-    items.push(`
-      <li class="page-item ${i === currentPage ? 'active' : ''}">
-        <a class="page-link" href="/block?page=${i}" data-page="${i}" data-link>${i}</a>
-      </li>
-    `);
-  }
-
-  // 添加最后一页和省略号（如需要）
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) {
-      items.push('<li class="page-item disabled"><span class="page-link">...</span></li>');
-    }
-    items.push(`
-      <li class="page-item">
-        <a class="page-link" href="/block?page=${totalPages}" data-page="${totalPages}" data-link>${totalPages}</a>
-      </li>
-    `);
-  }
-
-  // 添加"下一页"按钮
-  items.push(`
-    <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
-      <a class="page-link" href="/block?page=${currentPage + 1}" data-page="${currentPage + 1}" ${currentPage >= totalPages ? 'tabindex="-1" aria-disabled="true"' : ''} data-link>下一页</a>
-    </li>
-  `);
-
-  return items.join('');
-};
-
-/**
- * 区块列表视图初始化函数
- */
 const initBlockList = () => {
-  // 刷新按钮处理
-  const refreshBlocksBtn = document.getElementById('refreshBlocksBtn');
-  if (refreshBlocksBtn) {
-    refreshBlocksBtn.addEventListener('click', () => {
-      clearCache('blocks');
-      window.location.href = '/block'; // 重定向到区块列表页面，触发重新渲染
-    });
-  }
+  // 清空本地区块缓存
+  blockData = [];
+  nextBlock = null;
 
   // 加载更多按钮处理
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', async () => {
-      try {
-        const nextBlock = getNextBlock();
-        if (nextBlock >= 0) {
-          loadMoreBtn.disabled = true;
-          loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 加载中...';
-
-          const batchSize = getBatchSize();
-          const result = await fetchBlocks(nextBlock, batchSize);
-
-          if (result.data && result.data.length > 0) {
-            // 追加新区块到表格
-            const blockTableBody = document.getElementById('blockTableBody');
-            if (blockTableBody) {
-              const newBlocksHtml = result.data.map(block => `
-                <tr>
-                  <td><a href="/block?hash=${block.hash}" data-link>${block.number}</a></td>
-                  <td>${formatDateTime(block.timestamp)}</td>
-                  <td>${block.transactions ? block.transactions.length : 0}</td>
-                  <td>${parseInt(block.gasUsed)}</td>
-                  <td>${parseInt(block.gasLimit)}</td>
-                  <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
-                  <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${block.hash}</code></td>
-                  <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
-                </tr>
-              `).join('');
-
-              blockTableBody.insertAdjacentHTML('beforeend', newBlocksHtml);
-            }
-
-            // 更新缓存
-            updateBlockCache(result)
-
-            // 更新按钮状态
-            loadMoreBtn.disabled = result.nextBlock < 0;
-            loadMoreBtn.innerHTML = '加载更多';
-
-            // 如果没有更多区块可加载，禁用按钮
-            if (result.nextBlock < 0) {
-              loadMoreBtn.disabled = true;
-              loadMoreBtn.innerHTML = '没有更多区块';
-            }
-          } else {
-            loadMoreBtn.disabled = true;
-            loadMoreBtn.innerHTML = '没有更多区块';
-          }
-        }
-      } catch (error) {
-        console.error('加载更多区块失败:', error);
-        showToast('Error', '加载更多区块失败');
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.innerHTML = '重试加载';
-      }
-    });
+    loadMoreBtn.addEventListener('click', async () => loadMoreItems());
   }
 
-  // 监听批量大小变更事件
-  const batchSizeChangedHandler = () => {
-    // do nothing
-  };
-
-  // 移除旧的监听器（如果有）
-  document.removeEventListener('batchSize-changed', batchSizeChangedHandler);
-  // 添加新的监听器
-  document.addEventListener('batchSize-changed', batchSizeChangedHandler);
+  // 加载第一批数据
+  loadMoreItems()
 };
 
-// 创建带有init方法的视图函数
-const BlockListView = renderBlockList;
+
+const BlockListView = async () => {
+  return await renderBlockList();
+}
+
 BlockListView.init = initBlockList;
 
 export default BlockListView;
-export { renderBlockList, initBlockList, generatePaginationItems };

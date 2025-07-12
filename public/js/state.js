@@ -9,11 +9,7 @@ const globalState = {
   currentSigner: null, // 将会是一个 { address: "0x...", type: "hardhat" 或 "wallet" } 对象
   hardhatAccounts: [],
   
-  // 缓存的区块数据
-  blockCache: {
-    data: [],
-    nextBlock: null, // 下一次加载的起始区块：null表示从最新区块开始；-1表示没有更多数据了。
-  },
+
 
   // 用户设置
   settings: {
@@ -82,27 +78,6 @@ export function currentSigner(newSigner, type) {
 }
 
 
-// ================================================= 处理区块缓存
-
-export function updateBlockCache(result) {
-  if (!globalState.blockCache?.data) {
-    globalState.blockCache = result;
-  }
-  else {
-    globalState.blockCache.data = [...globalState.blockCache.data, ...result.data];
-    globalState.blockCache.nextBlock = result.nextBlock;
-  }
-  saveGlobalState();
-}
-
-export function getCachedBlocks() {
-  return globalState.blockCache?.data || [];
-}
-
-export function getNextBlock() {
-  return globalState.blockCache?.nextBlock || null;
-}
-
 
 /**
  * 清空缓存数据
@@ -111,13 +86,12 @@ export function getNextBlock() {
 export function clearCache(cacheType = null) {
   if (cacheType === null) {
     // 清空所有缓存
-    globalState.blockCache = {};
     globalState.transactionCache = {};
     globalState.blockDetails = {};
     globalState.transactionDetails = {};
     globalState.accountCache = {};
   } else if (cacheType === 'blocks') {
-    globalState.blockCache = {};
+    // 区块缓存已移到 block_list.js
   } else if (cacheType === 'signers') {
     globalState.hardhatAccounts = [];
   }
