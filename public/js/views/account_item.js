@@ -200,7 +200,7 @@ AccountItemView.init = (address) => {
 
         // 确保MetaMask已连接并有权限
         if (!window.ethereum) {
-          // DEBUG
+          // TODO:WALLET
           // throw new Error("MetaMask未安装或不可用");
         }
 

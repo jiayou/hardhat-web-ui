@@ -58,4 +58,21 @@ export function formatEther(wei) {
   return `${ether}.${decimalPart} ETH`;
 }
 
+/**
+ * 复制文本到剪贴板
+ * @param {string} text - 要复制的文本
+ * @returns {Promise<boolean>} - 复制成功返回true，失败返回false
+ */
+export async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('成功', '已复制到剪贴板');
+    return true;
+  } catch (err) {
+    console.error('复制到剪贴板失败:', err);
+    showToast('错误', '复制到剪贴板失败');
+    return false;
+  }
+}
+
 

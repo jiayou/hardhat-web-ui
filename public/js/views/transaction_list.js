@@ -2,7 +2,7 @@
  * 交易列表视图
  */
 
-import { showToast, formatDateTime, shortenAddress } from '../utils.js';
+import { showToast, formatDateTime, shortenAddress, copyToClipboard } from '../utils.js';
 import TransactionItemView from './transaction_item.js';
 
 /**
@@ -52,9 +52,9 @@ const TransactionListView = async () => {
                 <tbody>
                   ${flattenData.map(tx => `
                     <tr>
-                      <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
-                      <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
-                      <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                      <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.hash}"><i class="bi bi-clipboard"></i></button></td>
+                      <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.from}"><i class="bi bi-clipboard"></i></button></td>
+                      <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : '<span class="badge bg-info">合约创建</span>'}</td>
                       <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
                       <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
                       <td>${tx.gasLimit}</td>
@@ -83,6 +83,18 @@ const TransactionListView = async () => {
  * 交易列表视图初始化函数
  */
 TransactionListView.init = () => {
+  // 复制按钮事件委托
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.copy-btn')) {
+      const btn = e.target.closest('.copy-btn');
+      const textToCopy = btn.getAttribute('data-copy');
+      if (textToCopy) {
+        copyToClipboard(textToCopy);
+        showToast('成功', '已复制到剪贴板');
+      }
+    }
+  });
+
   // 交易搜索表单处理
   const txSearchForm = document.getElementById('txSearchForm');
   if (txSearchForm) {
@@ -122,9 +134,9 @@ TransactionListView.init = () => {
             flattenData.forEach(tx => {
               const row = document.createElement('tr');
               row.innerHTML = `
-                <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
-                <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
-                <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.hash}"><i class="bi bi-clipboard"></i></button></td>
+                <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.from}"><i class="bi bi-clipboard"></i></button></td>
+                <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : '<span class="badge bg-info">合约创建</span>'}</td>
                 <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
                 <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
                 <td>${tx.gasLimit}</td>

@@ -43,11 +43,7 @@ export function renderDeployForm(contract) {
   const constructor = contract.abi.find(item => item.type === 'constructor');
 
   if (constructor && constructor.inputs.length > 0) {
-    constructorParams.innerHTML = '<div class="mb-3">\n' +
-    '  <label class="form-label">部署价值 (ETH)</label>\n' +
-    '  <input type="number" step="0.0001" class="form-control" id="deployValue" placeholder="0.0">\n' +
-    '</div>\n' +
-    '<h6 class="mb-3">构造函数参数:</h6>' +
+    constructorParams.innerHTML = '<h6 class="mb-3">构造函数参数:</h6>' +
       constructor.inputs.map((input, index) => `
         <div class="mb-3">
           <label class="form-label">${input.name || 'param' + index} (${input.type})</label>
@@ -119,10 +115,10 @@ export function initContractDeployView(onDeploySuccess) {
             <p>未检测到MetaMask或其他以太坊钱包</p>
           </div>
         `;
-        return;
+        // TODO:WALLET
+        // return;
       }
 
-      const deployValue = document.getElementById('deployValue').value || '0';
       fetch('/api/contract/prepare-deploy', {
         method: 'POST',
         headers: {
@@ -132,13 +128,12 @@ export function initContractDeployView(onDeploySuccess) {
           from: signerInfo.address,
           contractName: contract.contractName,
           bytecode: contract.bytecode,
-          args,
-          value: deployValue
+          args
         }),
       })
       .then(response => {
         if (!response.ok) {
-          showToast('Error', '准备部署失败:' + statusText);
+          showToast('Error', '准备部署失败:' + response.statusText);
           return;
         }
 
