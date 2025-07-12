@@ -187,6 +187,24 @@ AccountItemView.init = (address) => {
 
   // 绑定转账按钮点击事件
   const transferBtn = document.getElementById('transferBtn');
+  const transferAmount = document.getElementById('transferAmount');
+  
+  // 检查输入框是否为空，为空则禁用按钮
+  const updateTransferBtnState = () => {
+    if (transferBtn && transferAmount) {
+      transferBtn.disabled = !transferAmount.value;
+    }
+  };
+  
+  // 初始化时检查按钮状态
+  updateTransferBtnState();
+  
+  // 绑定输入框的事件，实时更新按钮状态
+  if (transferAmount) {
+    transferAmount.addEventListener('input', updateTransferBtnState);
+    transferAmount.addEventListener('change', updateTransferBtnState);
+  }
+  
   if (transferBtn) {
     transferBtn.addEventListener('click', (e)=> {
       e.preventDefault();
@@ -244,7 +262,11 @@ AccountItemView.init = (address) => {
           if (response.ok) {
             showToast(t('common.success'), t('wallet.transferSuccess'));
             response.json().then(data => {
-              WaitReceipt.show(data.txHash);
+              WaitReceipt.show(data.txHash).then(receipt => {
+                // 清空输入框
+                document.getElementById('transferAmount').value = '';
+                updateTransferBtnState();
+              });
               console.log('转账成功', data)
             })
           }

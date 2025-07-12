@@ -21,7 +21,7 @@ const WaitReceipt = {
 
     // 创建回执对话框
     const receiptModal = `
-      <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+      <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
@@ -82,7 +82,10 @@ const WaitReceipt = {
     });
 
     // 显示模态框
-    const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    const modal = new bootstrap.Modal(document.getElementById('receiptModal'), {
+      backdrop: 'static',
+      keyboard: false
+    });
     modal.show();
 
     return this._fetchReceiptData(txHash);
@@ -125,6 +128,20 @@ const WaitReceipt = {
         if (countdownInterval) {
           clearInterval(countdownInterval);
           countdownEl.textContent = '';
+        }
+        
+        // 更新状态图标
+        const statusIconContainer = document.querySelector('#receiptContent .alert .d-flex div:first-child');
+        if (statusIconContainer) {
+          if (type === 'success') {
+            // 替换成功图标
+            statusIconContainer.classList.remove('spinner-border');
+            statusIconContainer.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2" style="font-size: 1.2rem;"></i>';
+          } else if (type === 'danger') {
+            // 替换失败图标
+            statusIconContainer.classList.remove('spinner-border');
+            statusIconContainer.innerHTML = '<i class="bi bi-exclamation-circle-fill text-danger me-2" style="font-size: 1.2rem;"></i>';
+          }
         }
       }
     };
