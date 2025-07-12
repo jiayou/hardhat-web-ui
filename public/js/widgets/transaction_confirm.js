@@ -169,6 +169,237 @@ const TransactionConfirm = {
    * 设置事件处理器
    * @private
    */
+  /**
+   * 显示等待回执的模态框
+   * @param {string} txHash - 交易哈希
+   */
+  _showWaitReceiptModal: function(txHash) {
+    // 移除可能存在的旧模态框
+    const existingModal = document.getElementById('waitReceiptModal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // 创建等待回执模态框
+    const modalHtml = `
+      <div class="modal fade" id="waitReceiptModal" tabindex="-1" aria-labelledby="waitReceiptModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="waitReceiptModalLabel">交易回执详情</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <strong>交易哈希:</strong> 
+                <code>${txHash}</code>
+              </div>
+              <div id="receiptLoading">
+                <div class="d-flex align-items-center">
+                  <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <span>正在获取交易回执...</span>
+                </div>
+              </div>
+              <div id="receiptContent" class="d-none">
+                <!-- 回执内容将通过JavaScript填充 -->
+              </div>
+              <div id="receiptError" class="d-none alert alert-danger">
+                <!-- 错误信息将通过JavaScript填充 -->
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // 添加到DOM并显示
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const receiptModal = new bootstrap.Modal(document.getElementById('waitReceiptModal'));
+    receiptModal.show();
+    
+    // 立即获取交易回执
+    this._fetchTransactionReceipt(txHash);
+  },
+  
+  /**
+   * 获取交易回执
+   * @param {string} txHash - 交易哈希
+   */
+  _fetchTransactionReceipt: function(txHash) {
+    fetch(`/api/transaction/${txHash}`)
+      .then(response => response.json())
+      .then(data => {
+        const receiptLoading = document.getElementById('receiptLoading');
+        const receiptContent = document.getElementById('receiptContent');
+        const receiptError = document.getElementById('receiptError');
+        
+        receiptLoading.classList.add('d-none');
+        
+        if (data.error) {
+          receiptError.classList.remove('d-none');
+          receiptError.textContent = `获取回执失败: ${data.error}`;
+          return;
+        }
+        
+        if (!data.receipt) {
+          receiptError.classList.remove('d-none');
+          receiptError.textContent = '交易回执尚未生成，请稍后再试';
+          return;
+        }
+        
+        // 显示回执内容
+        receiptContent.classList.remove('d-none');
+        
+        // 格式化回执内容
+        const receipt = data.receipt;
+        const status = receipt.status === '0x1' ? '成功' : '失败';
+        const statusClass = receipt.status === '0x1' ? 'text-success' : 'text-danger';
+        
+        // 构建回执HTML
+        let receiptHtml = `
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <tbody>
+                <tr>
+                  <th class="table-light" style="width: 30%">状态</th>
+                  <td><span class="${statusClass}"><strong>${status}</strong></span></td>
+                </tr>
+                <tr>
+                  <th class="table-light">区块高度</th>
+                  <td>${parseInt(receipt.blockNumber, 16)}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">Gas使用量</th>
+                  <td>${parseInt(receipt.gasUsed, 16)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        // 如果有事件日志，显示事件日志
+        if (receipt.logs && receipt.logs.length > 0) {
+          receiptHtml += `
+            <h6 class="mt-3 mb-2">事件日志:</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>地址</th>
+                    <th>主题</th>
+                  </tr>
+                </thead>
+                <tbody>
+          `;
+          
+          receipt.logs.forEach((log, index) => {
+            receiptHtml += `
+              <tr>
+                <td>${index + 1}</td>
+                <td><code>${log.address}</code></td>
+                <td><code>${log.topics[0]}</code>${log.topics.length > 1 ? '...' : ''}</td>
+              </tr>
+            `;
+          });
+          
+          receiptHtml += `
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+        
+        receiptContent.innerHTML = receiptHtml;
+      })
+      .catch(error => {
+        const receiptLoading = document.getElementById('receiptLoading');
+        const receiptError = document.getElementById('receiptError');
+        
+        receiptLoading.classList.add('d-none');
+        receiptError.classList.remove('d-none');
+        receiptError.textContent = `获取回执出错: ${error.message}`;
+      });
+  },
+  
+  /**
+   * 轮询交易状态
+   * @param {string} txHash - 交易哈希
+   * @param {Function} showTxStatus - 显示交易状态的函数
+   */
+  _pollTransactionStatus: function(txHash, showTxStatus) {
+    let pollCount = 0;
+    const maxPolls = 30; // 最多轮询30次，约2.5分钟
+    
+    const pollInterval = setInterval(() => {
+      pollCount++;
+      
+      fetch(`/api/transaction/${txHash}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.receipt) {
+            // 交易已确认，显示状态
+            clearInterval(pollInterval);
+            
+            const receipt = data.receipt;
+            const success = receipt.status === '0x1';
+            const statusContainer = document.getElementById('txStatusContainer');
+            
+            if (success) {
+              statusContainer.querySelector('.alert').classList.remove('alert-info');
+              statusContainer.querySelector('.alert').classList.add('alert-success');
+              statusContainer.querySelector('.spinner-border').classList.add('d-none');
+              
+              const successIcon = document.createElement('i');
+              successIcon.className = 'bi bi-check-circle me-2';
+              statusContainer.querySelector('.d-flex').prepend(successIcon);
+              
+              const txStatusElem = document.getElementById('txStatusMessage');
+              txStatusElem.innerHTML = `交易成功! <a href="#" id="viewReceiptLink2" class="text-primary">查看回执</a>`;
+              
+              document.getElementById('viewReceiptLink2')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                this._showWaitReceiptModal(txHash);
+              });
+            } else {
+              statusContainer.querySelector('.alert').classList.remove('alert-info');
+              statusContainer.querySelector('.alert').classList.add('alert-danger');
+              statusContainer.querySelector('.spinner-border').classList.add('d-none');
+              
+              const errorIcon = document.createElement('i');
+              errorIcon.className = 'bi bi-x-circle me-2';
+              statusContainer.querySelector('.d-flex').prepend(errorIcon);
+              
+              const txStatusElem = document.getElementById('txStatusMessage');
+              txStatusElem.innerHTML = `交易失败! <a href="#" id="viewReceiptLink2" class="text-primary">查看回执</a>`;
+              
+              document.getElementById('viewReceiptLink2')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                this._showWaitReceiptModal(txHash);
+              });
+            }
+          } else if (pollCount >= maxPolls) {
+            // 达到最大轮询次数，停止轮询
+            clearInterval(pollInterval);
+            const txStatusElem = document.getElementById('txStatusMessage');
+            if (txStatusElem) {
+              txStatusElem.textContent = `交易处理时间过长，请稍后查看状态`;
+            }
+          }
+          // 如果没有收到回执，继续轮询
+        })
+        .catch(error => {
+          console.error('Error polling transaction status:', error);
+          // 发生错误时不停止轮询，继续等待
+        });
+    }, 5000); // 每5秒轮询一次
+  },
+  
   _setupEventHandlers: function(modal, txData) {
     // 保存原始值，用于还原按钮
     const originalGas = parseInt(txData.gas, 16);
@@ -253,10 +484,22 @@ const TransactionConfirm = {
       .then((txHash) => {
         console.log('Transaction sent with hash:', txHash);
         // 显示交易哈希
-        showTxStatus('交易已发送！交易哈希: ' + txHash);
+        const txHashDisplay = `<div>交易已发送！交易哈希: ${txHash} <a href="#" id="viewReceiptLink" class="text-primary ms-2">查看回执</a></div>`;
+        showTxStatus(txHashDisplay);
         showToast('Success', '交易已发送！交易哈希: ' + txHash);
+        
+        // 为查看回执链接添加事件监听
+        document.getElementById('viewReceiptLink')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          // 显示WaitReceipt对话框
+          this._showWaitReceiptModal(txHash);
+        });
+        
         // 显示关闭按钮
         updateButtonsForTx(true);
+        
+        // 开始轮询交易状态
+        this._pollTransactionStatus(txHash, showTxStatus);
       })
       .catch((error) => {
         console.error('Error sending transaction:', error);

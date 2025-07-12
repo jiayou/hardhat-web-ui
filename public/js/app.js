@@ -3,10 +3,9 @@
  */
 
 import { showToast } from './utils.js';
-import { initSettingsUI } from './state.js';
+import { initSettingsUI, currentSigner } from './state.js';
 import { openSignerDialog, displayCurrentSigner } from './widgets/signer.js';
 import { initI18n, switchLanguage, getCurrentLanguage, supportedLanguages, initMutationObserver, t } from './i18n.js';
-
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', async function() {
   
@@ -23,11 +22,30 @@ document.addEventListener('DOMContentLoaded', async function() {
   // 初始化Socket.io连接
   const socket = io();
   
-  // 初始化网络信息
-  initNetworkInfo();
-  
-  // 显示签名者信息
-  displayCurrentSigner();  
+  // 延迟执行网络信息和签名者信息的初始化，确保i18n已完全加载
+  setTimeout(async () => {
+    try {
+      // 先获取可用的signer列表
+      const signerResponse = await fetch('/api/signer');
+      const signers = await signerResponse.json();
+      
+      // 检查当前是否有signer，如果没有则设置第一个获取到的signer作为默认值
+      const currentSignerValue = currentSigner();
+      if (!currentSignerValue && signers && signers.length > 0) {
+        // 设置第一个signer作为默认值
+        const defaultSigner = typeof signers[0] === 'string' ? signers[0] : signers[0].address || signers[0];
+        currentSigner(defaultSigner, 'hardhat');
+      }
+      
+      // 直接更新网络信息，避免显示"加载中"状态
+      updateNetworkInfo();
+      
+      // 显示签名者信息
+      displayCurrentSigner();
+    } catch (error) {
+      console.error('Failed to initialize signer:', error);
+    }
+  }, 500);
 
   // 处理实时网络事件
   socket.on('newBlock', (blockData) => {
