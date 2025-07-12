@@ -3,7 +3,7 @@
  */
 
 import { showToast, shortenAddress } from '../utils.js';
-import TransferConfirm from '../widgets/transfer_confirm.js';
+import TransactionConfirm from '../widgets/transaction_confirm.js';
 import { currentSigner } from '../state.js';
 import { t } from '../i18n.js';
 import WaitReceipt from '../widgets/wait_receipt.js';
@@ -242,7 +242,7 @@ AccountItemView.init = (address) => {
           response.json().then(data => {
             // 显示转账确认框
             console.log("prepare-transfer response: ", data);
-            TransferConfirm.show(data.txData);
+            TransactionConfirm.show(data.txData);
           })
         })
       }

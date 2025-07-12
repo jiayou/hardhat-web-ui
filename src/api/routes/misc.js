@@ -31,9 +31,9 @@ router.post('/transfer', async (req, res) => {
     console.log('to:', to);
     console.log('amount (ETH):', amount);
     
-    // 将ETH转换为十六进制Wei值
-    const valueInWei = amount * 1e18; // 转换为Wei
-    const valueInHex = '0x' + parseInt(valueInWei).toString(16);
+    // 将ETH转换为十六进制Wei值（使用BigInt处理大金额）
+    const valueInBigInt = BigInt(Math.floor(amount * 10000)) * BigInt(10)**BigInt(14); // 转换为Wei (处理小数点后4位)
+    const valueInHex = '0x' + valueInBigInt.toString(16);
     console.log('valueInHex:', valueInHex);
 
     const { httpProvider } = req.app.locals;
@@ -100,9 +100,9 @@ router.post('/prepare-transfer', async (req, res) => {
     const nonce = await httpProvider.getTransactionCount(from, 'latest');
     const nonceHex = '0x' + nonce.toString(16);
     
-    // 前端传入的是ETH金额，这里转换为十六进制Wei值
-    const valueInWei = amount * 1e18; // 转换为Wei
-    const valueInHex = '0x' + parseInt(valueInWei).toString(16);
+    // 前端传入的是ETH金额，这里转换为十六进制Wei值（使用BigInt处理大金额）
+    const valueInBigInt = BigInt(Math.floor(amount * 10000)) * BigInt(10)**BigInt(14); // 转换为Wei (处理小数点后4位)
+    const valueInHex = '0x' + valueInBigInt.toString(16);
     console.log('valueInHex:', valueInHex);
 
     // 构建完整的交易数据

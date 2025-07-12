@@ -7,7 +7,7 @@ import { showToast } from '../utils.js';
 /**
  * 转账确认模态框组件
  */
-const TransferConfirm = {
+const TransactionConfirm = {
   /**
    * 显示转账确认对话框
    * @param {Object} txData - 转账数据
@@ -25,9 +25,15 @@ const TransferConfirm = {
     // 解析交易数据
     const fromAddress = txData.from;
     const targetAddress = txData.to;
-    // 将十六进制的value转换为ETH显示值
-    const valueInWei = parseInt(txData.value, 16);
-    const amount = (valueInWei / 1e18).toFixed(6); // 转换为ETH并保留6位小数
+    
+    // 只有当txData中存在value字段时才解析金额
+    let amount;
+    if (txData.value !== undefined) {
+      // 将十六进制的value转换为ETH显示值
+      const valueInWei = parseInt(txData.value, 16);
+      amount = (valueInWei / 1e18).toFixed(6); // 转换为ETH并保留6位小数
+    }
+    
     const gas = parseInt(txData.gas, 16);
     const gasPrice = parseInt(txData.gasPrice, 16) / 1e9; // 转换为Gwei
     const nonce = parseInt(txData.nonce, 16);
@@ -36,18 +42,18 @@ const TransferConfirm = {
     console.log("amount", amount)
 
     // 移除可能存在的旧模态框
-    const existingModal = document.getElementById('transferConfirmModal');
+    const existingModal = document.getElementById('transactionConfirmModal');
     if (existingModal) {
       existingModal.remove();
     }
 
-    // 创建确认对话框
-    const confirmModal = `
-      <div class="modal fade" id="transferConfirmModal" tabindex="-1" aria-labelledby="transferConfirmModalLabel" aria-hidden="true">
+    // 创建确认对话框的基本结构
+    let modalBody = `
+      <div class="modal fade" id="transactionConfirmModal" tabindex="-1" aria-labelledby="transactionConfirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="transferConfirmModalLabel">确认转账</h5>
+              <h5 class="modal-title" id="transactionConfirmModalLabel">确认转账</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -62,22 +68,58 @@ const TransferConfirm = {
                     <tr>
                       <th class="table-light">接收地址</th>
                       <td><code>${targetAddress}</code></td>
-                    </tr>
+                    </tr>`;
+    
+    // 只有当txData中存在value字段且解析出了金额时才显示金额行
+    if (amount !== undefined) {
+      modalBody += `
                     <tr>
                       <th class="table-light">金额</th>
-                      <td><strong id="transferAmount">${amount} ETH</strong></td>
-                    </tr>
+                      <td><strong id="amount">${amount} ETH</strong></td>
+                    </tr>`;
+    }
+    
+    // 如果txData中有data字段，添加数据字节数行
+    if (txData.data) {
+      // 计算data字节数（去掉0x前缀后，每2个十六进制字符表示一个字节）
+      const dataBytes = txData.data.startsWith("0x") ? 
+        (txData.data.length - 2) / 2 : 
+        txData.data.length / 2;
+      
+      modalBody += `
                     <tr>
-                      <th class="table-light">Gas上限</th>
-                      <td>${gas}</td>
-                    </tr>
+                      <th class="table-light">数据</th>
+                      <td>${dataBytes} 字节</td>
+                    </tr>`;
+    }
+    
+    // 添加其余表格行
+    modalBody += `
                     <tr>
                       <th class="table-light">Gas价格</th>
                       <td>${gasPrice} Gwei</td>
                     </tr>
                     <tr>
+                      <th class="table-light">Gas上限</th>
+                      <td>
+                        <div class="input-group">
+                          <input type="number" class="form-control form-control-sm" id="gasInput" value="${gas}">
+                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetGasBtn" title="还原原值">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
                       <th class="table-light">Nonce</th>
-                      <td>${nonce}</td>
+                      <td>
+                        <div class="input-group">
+                          <input type="number" class="form-control form-control-sm" id="nonceInput" value="${nonce}">
+                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetNonceBtn" title="还原原值">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                     <tr>
                       <th class="table-light">链ID</th>
@@ -98,8 +140,11 @@ const TransferConfirm = {
               </div>
             </div>
             <div class="modal-footer" id="modalButtons">
+              <div class="me-auto">
+                <small class="text-muted">费用预估: <span id="feeEstimate">0.0000 ETH</span></small>
+              </div>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">取消</button>
-              <button type="button" class="btn btn-danger" id="walletTransferBtn">钱包转账</button>
+              <button type="button" class="btn btn-danger" id="walletTransactionBtn">钱包交易</button>
               <button type="button" class="btn btn-success d-none" id="closeBtn" data-bs-dismiss="modal">关闭</button>
             </div>
           </div>
@@ -107,11 +152,14 @@ const TransferConfirm = {
       </div>
     `;
 
+    // 完整的确认对话框HTML
+    const confirmModal = modalBody;
+
     // 添加模态框到DOM
     document.body.insertAdjacentHTML('beforeend', confirmModal);
 
     // 显示模态框
-    const modal = new bootstrap.Modal(document.getElementById('transferConfirmModal'));
+    const modal = new bootstrap.Modal(document.getElementById('transactionConfirmModal'));
     modal.show();
 
     this._setupEventHandlers(modal, txData);
@@ -122,6 +170,37 @@ const TransferConfirm = {
    * @private
    */
   _setupEventHandlers: function(modal, txData) {
+    // 保存原始值，用于还原按钮
+    const originalGas = parseInt(txData.gas, 16);
+    const originalNonce = parseInt(txData.nonce, 16);
+    const gasPriceGwei = parseInt(txData.gasPrice, 16) / 1e9; // 转换为Gwei
+
+    // 计算并显示费用预估的函数
+    const updateFeeEstimate = () => {
+      const currentGas = document.getElementById("gasInput").value;
+      // 计算费用 (gas * gasPrice)
+      const feeWei = currentGas * gasPriceGwei * 1e9; // 转回wei
+      const feeEth = feeWei / 1e18; // 转换为ETH
+      // 显示4位小数
+      document.getElementById("feeEstimate").textContent = feeEth.toFixed(4) + " ETH";
+    };
+
+    // 初始计算费用
+    updateFeeEstimate();
+
+    // 设置还原按钮的事件处理
+    document.getElementById('resetGasBtn')?.addEventListener('click', () => {
+      document.getElementById('gasInput').value = originalGas;
+      updateFeeEstimate(); // 更新费用预估
+    });
+
+    document.getElementById('resetNonceBtn')?.addEventListener('click', () => {
+      document.getElementById('nonceInput').value = originalNonce;
+    });
+    
+    // 监听Gas输入变化
+    document.getElementById("gasInput")?.addEventListener("input", updateFeeEstimate);
+
     // 添加显示交易状态的函数
     const showTxStatus = (message, isError = false) => {
       const statusContainer = document.getElementById('txStatusContainer');
@@ -141,9 +220,9 @@ const TransferConfirm = {
     const updateButtonsForTx = (showClose = false) => {
       // 隐藏取消和确认按钮
       document.getElementById('cancelBtn').classList.add('d-none');
-      const confirmBtn = document.getElementById('confirmTransferBtn');
+      const confirmBtn = document.getElementById('confirmTransactionBtn');
       if (confirmBtn) confirmBtn.classList.add('d-none');
-      const walletBtn = document.getElementById('walletTransferBtn');
+      const walletBtn = document.getElementById('walletTransactionBtn');
       if (walletBtn) walletBtn.classList.add('d-none');
 
       // 如果需要，显示关闭按钮
@@ -154,9 +233,17 @@ const TransferConfirm = {
 
 
     // 监听钱包转账按钮
-    document.getElementById('walletTransferBtn')?.addEventListener('click', () => {
+    document.getElementById('walletTransactionBtn')?.addEventListener('click', () => {
       showTxStatus('请在钱包中确认交易...');
 
+      // 更新txData中的gas和nonce值
+      const newGas = document.getElementById('gasInput').value;
+      const newNonce = document.getElementById('nonceInput').value;
+      
+      // 转换为十六进制
+      txData.gas = '0x' + parseInt(newGas).toString(16);
+      txData.nonce = '0x' + parseInt(newNonce).toString(16);
+      
       // 使用MetaMask直接发送交易
       console.log('MetaMask 发起转账，请耐心等待钱包确认');
       window.ethereum.request({
@@ -183,4 +270,4 @@ const TransferConfirm = {
   }
 };
 
-export default TransferConfirm;
+export default TransactionConfirm;

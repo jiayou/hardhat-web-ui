@@ -4,7 +4,7 @@
 
 import { showToast } from '../utils.js';
 import { currentSigner } from '../state.js';
-import TransferConfirm from '../widgets/transfer_confirm.js';
+import TransactionConfirm from '../widgets/transaction_confirm.js';
 import WaitReceipt from '../widgets/wait_receipt.js';
 
 // 合约实例缓存
@@ -426,7 +426,7 @@ async function walletCall(e, contract) {
     response.json().then(data => {
       // 显示转账确认框
       console.log("prepare-transfer response: ", data);
-      TransferConfirm.show(data.txData);
+      TransactionConfirm.show(data.txData);
 
     })
     
