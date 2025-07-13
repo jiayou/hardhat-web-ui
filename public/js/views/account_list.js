@@ -44,9 +44,11 @@ const AccountListView = async () => {
         </div>
       </div>
       <div class="col-12 mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="card-title">${t('account.commonAccounts')}</h5>
+        </div>
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">${t('account.commonAccounts')}</h5>
             <div id="accountList" class="list-group mt-3">
               <div class="text-center">
                 <div class="spinner-border text-primary" role="status">

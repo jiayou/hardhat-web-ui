@@ -13,6 +13,14 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="/" data-link>Hardhat Web UI</a>
+
+      <!-- 网络信息 -->
+      <div class="d-flex align-items-center text-light">
+        <div id="networkInfo">
+          <span class="badge bg-success"> <span id="networkName" data-i18n="common.loading">加载中...</span>:<span id="chainId">-</span></span>
+        </div>
+      </div>
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -42,13 +50,6 @@
             </div>
           </div>
           
-          <!-- 网络信息 -->
-          <div class="d-flex align-items-center text-light">
-            <div id="networkInfo">
-              <span class="badge bg-success"> <span id="networkName" data-i18n="common.loading">加载中...</span>:<span id="chainId">-</span></span>
-            </div>
-          </div>
-
           <!-- 语言切换 -->
           <div class="ms-3 d-flex align-items-center">
             <div class="dropdown">

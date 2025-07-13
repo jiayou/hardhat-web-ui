@@ -70,8 +70,22 @@ const renderBlockList = () => {
     return `
       <div class="row mt-4">
         <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">查询区块</h5>
+              <form id="accountSearchForm" class="mt-3">
+                <div class="input-group mb-3">
+                  <input type="text" class="form-control" placeholder="请输入区块号或Hash" id="addressInput">
+                  <button class="btn btn-primary" type="submit">${t('common.search')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>${t('block.list')}</h2>
+            <h5>最新区块</h5>
           </div>
 
           <div class="card">
@@ -164,6 +178,18 @@ const initBlockList = () => {
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', async () => loadMoreItems());
+  }
+
+  // 处理区块搜索表单提交
+  const accountSearchForm = document.getElementById('accountSearchForm');
+  if (accountSearchForm) {
+    accountSearchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('addressInput').value.trim();
+      if (input) {
+        window.location.href = `/block?hash=${input}`;
+      }
+    });
   }
 
   // 加载第一批数据

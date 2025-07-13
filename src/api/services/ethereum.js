@@ -1,4 +1,4 @@
-const { handleResult } = require('../utils');
+const { handleResult, isLiveNetwork } = require('../utils');
 const { extractBlockInfo, useFields }= require('../utils');
 
 
@@ -39,7 +39,12 @@ async function getBlockById(provider, blockId) {
 
     let txInfo = [];
     for (let tx_hash of block.transactions) {
-      tx_item = await provider.getTransaction(tx_hash);
+      if (isLiveNetwork()) {
+        tx_item = { hash: tx_hash }
+      }
+      else {
+        tx_item = await provider.getTransaction(tx_hash);
+      }
       txInfo.push(handleResult(tx_item));
     }
 

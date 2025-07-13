@@ -53,8 +53,20 @@ function useFields(object, fields)
   return handleResult(result);
 }
 
+async function isLiveNetwork() {
+  const liveNetworkIds = [ 1, 11155111 ];
+  try {
+    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
+    return liveNetworkIds.includes(chainId);
+  }
+  finally {
+    return true;
+  }
+}
+
 module.exports = {
   handleResult,
   useFields,
+  isLiveNetwork,
   extractBlockInfo
 }

@@ -2,7 +2,7 @@
  * 主应用入口文件
  */
 
-import { showToast } from './utils.js';
+import { showToast, shortenAddress } from './utils.js';
 import { currentSigner } from './state.js';
 import { openSignerDialog, displayCurrentSigner } from './widgets/signer.js';
 import { initI18n, switchLanguage, getCurrentLanguage, supportedLanguages, initMutationObserver, t } from './i18n.js';
@@ -77,14 +77,29 @@ function initLanguageSelector() {
   // 语言切换后刷新页面内容
   document.addEventListener('language-changed', function(event) {
     updateCurrentLanguageDisplay();
-    // 更新网络信息和Signer信息
-    updateNetworkInfo();
-    displayCurrentSigner();
 
-    // 重新渲染当前视图以更新所有动态生成的i18n文本
+    // 先重新渲染当前视图以更新所有动态生成的i18n文本
     import('./router.js').then(module => {
       const router = module.default;
       router.render();
+
+      // 等待一小段时间确保DOM已更新，然后再更新网络和签名者信息
+      setTimeout(() => {
+        // 更新网络信息
+        updateNetworkInfo().then(() => {
+          console.log('Network info updated after language change');
+        }).catch(err => {
+          console.error('Error updating network info:', err);
+        });
+
+        // 更新签名者信息
+        try {
+          displayCurrentSigner();
+          console.log('Signer info updated after language change');
+        } catch (err) {
+          console.error('Error updating signer info:', err);
+        }
+      }, 300); // 300ms延时，确保UI渲染完成
     });
   });
 }
@@ -99,30 +114,10 @@ function updateCurrentLanguageDisplay() {
     displayElement.textContent = supportedLanguages[currentLang];
   }
 }
-/**
- * 初始化网络信息
- */
-async function initNetworkInfo() {
-  try {
-    // 显示加载状态
-    document.getElementById('networkName').textContent = t('common.loading');
-    document.getElementById('chainId').textContent = t('common.loading');
-
-    const response = await fetch('/api/network/info');
-    const data = await response.json();
-    if (data && data.network) {
-      document.getElementById('networkName').textContent = data.network.name || t('common.unknown');
-      document.getElementById('chainId').textContent = data.network.chainId || '-';
-    }
-  } catch (error) {
-    console.error(t('error.networkInfoFailed'), error);
-    document.getElementById('networkName').textContent = t('error.failed');
-    document.getElementById('chainId').textContent = t('error.failed');
-  }
-}
 
 /**
  * 更新网络信息
+ * @returns {Promise} 完成后的Promise
  */
 async function updateNetworkInfo() {
   try {
@@ -132,7 +127,9 @@ async function updateNetworkInfo() {
       document.getElementById('networkName').textContent = data.network.name || t('common.unknown');
       document.getElementById('chainId').textContent = data.network.chainId || '-';
     }
+    return true; // 明确返回Promise成功结果
   } catch (error) {
     console.error(t('error.networkInfoUpdateFailed'), error);
+    return false; // 返回失败结果，但仍然是resolved的Promise
   }
 }

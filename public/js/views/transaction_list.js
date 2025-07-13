@@ -3,7 +3,7 @@
  */
 
 import { showToast, formatDateTime, shortenAddress, copyToClipboard } from '../utils.js';
-import TransactionItemView from './transaction_item.js';
+import { isLiveNetwork } from '../state.js';
 import { t } from '../i18n.js';
 
 /**
@@ -23,9 +23,9 @@ const TransactionListView = async () => {
     return `
       <div class="row mt-4">
         <div class="col-12">
-          <div class="d-flex justify-content-between align-items-center">
-            <h2>${t('transaction.list')}</h2>
-            <div>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">查询交易</h5>
               <form id="txSearchForm" class="mt-3">
                 <div class="input-group mb-3">
                   <input type="text" class="form-control" placeholder="${t('transaction.inputHash')}" id="txHashInput">
@@ -33,6 +33,12 @@ const TransactionListView = async () => {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5>${t('transaction.list')}</h5>
           </div>
           <div class="card">
             <div class="card-body">
