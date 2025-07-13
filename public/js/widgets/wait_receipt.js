@@ -1,6 +1,8 @@
 /**
  * 交易回执模态框组件
  */
+import { t } from '../i18n.js';
+
 const WaitReceipt = {
   /**
    * 显示交易回执对话框并等待交易完成
@@ -25,18 +27,18 @@ const WaitReceipt = {
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="receiptModalLabel">交易回执</h5>
+              <h5 class="modal-title" id="receiptModalLabel">${t('waitReceipt.title')}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <h6 class="mb-3">交易哈希: <code>${txHash}</code></h6>
+              <h6 class="mb-3">${t('waitReceipt.transactionHash')}: <code>${txHash}</code></h6>
               <div id="receiptContent" class="mt-3">
                 <div class="alert alert-info">
                   <div class="d-flex align-items-center">
                     <div class="spinner-border spinner-border-sm me-2" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
-                    <span id="receiptStatusMessage">正在获取交易回执...</span>
+                    <span id="receiptStatusMessage">${t('waitReceipt.fetchingReceipt')}</span>
                     <span id="countdownTimer" class="ms-2"></span>
                   </div>
                 </div>
@@ -50,7 +52,7 @@ const WaitReceipt = {
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary d-none" data-bs-dismiss="modal" id="closeBtn">关闭</button>
+              <button type="button" class="btn btn-secondary d-none" data-bs-dismiss="modal" id="closeBtn">${t('waitReceipt.close')}</button>
             </div>
           </div>
         </div>
@@ -156,17 +158,17 @@ const WaitReceipt = {
 
       // 构建表格行
       const rows = [
-        { label: '发送地址', value: receipt.from },
-        { label: '接收地址', value: receipt.to },
-        { label: '交易哈希', value: receipt.hash },
-        { label: '区块哈希', value: receipt.blockHash },
-        { label: '区块号', value: receipt.blockNumber },
-        { label: '交易索引', value: receipt.index },
-        { label: '使用Gas', value: receipt.gasUsed },
-        { label: '累计Gas用量', value: receipt.cumulativeGasUsed },
-        { label: 'Gas价格', value: receipt.gasPrice },
-        { label: '交易类型', value: receipt.type },
-        { label: '状态', value: receipt.status === 1 ? '成功' : '失败' }
+        { label: t('waitReceipt.receiptDetails.fromAddress'), value: receipt.from },
+        { label: t('waitReceipt.receiptDetails.toAddress'), value: receipt.to },
+        { label: t('waitReceipt.receiptDetails.txHash'), value: receipt.hash },
+        { label: t('waitReceipt.receiptDetails.blockHash'), value: receipt.blockHash },
+        { label: t('waitReceipt.receiptDetails.blockNumber'), value: receipt.blockNumber },
+        { label: t('waitReceipt.receiptDetails.transactionIndex'), value: receipt.index },
+        { label: t('waitReceipt.receiptDetails.gasUsed'), value: receipt.gasUsed },
+        { label: t('waitReceipt.receiptDetails.cumulativeGasUsed'), value: receipt.cumulativeGasUsed },
+        { label: t('waitReceipt.receiptDetails.gasPrice'), value: receipt.gasPrice },
+        { label: t('waitReceipt.receiptDetails.transactionType'), value: receipt.type },
+        { label: t('waitReceipt.receiptDetails.status'), value: receipt.status === 1 ? t('waitReceipt.receiptDetails.statusSuccess') : t('waitReceipt.receiptDetails.statusFailed') }
       ];
 
       // 添加行到表格
@@ -199,9 +201,9 @@ const WaitReceipt = {
 
             // 判断交易状态并更新UI
             if (data.receipt.status === 1) {
-              updateReceiptStatus('交易成功！', 'success');
+              updateReceiptStatus(t('waitReceipt.transactionSuccess'), 'success');
             } else {
-              updateReceiptStatus('交易失败！', 'danger');
+              updateReceiptStatus(t('waitReceipt.transactionFailed'), 'danger');
             }
 
             // 显示回执详情
@@ -218,17 +220,17 @@ const WaitReceipt = {
           } else {
             // 没有回执，开始倒计时
             if (!countdownInterval) {
-              updateReceiptStatus('等待交易确认中...');
+              updateReceiptStatus(t('waitReceipt.waitingConfirmation'));
 
               // 启动倒计时
               countdownInterval = setInterval(() => {
-                countdownEl.textContent = `(${countdown}秒后重试)`;
+                countdownEl.textContent = `(${countdown} ${t('waitReceipt.retryCountdown')})`;
                 countdown--;
 
                 if (countdown < 0) {
                   countdown = 10;
                   countdownEl.textContent = '';
-                  statusMessageEl.textContent = '正在重新获取交易回执...';
+                  statusMessageEl.textContent = t('waitReceipt.refetchingReceipt');
                   fetchReceipt();
                 }
               }, 1000);
@@ -237,7 +239,7 @@ const WaitReceipt = {
         })
         .catch(error => {
           console.error('Error fetching transaction receipt:', error);
-          updateReceiptStatus(`获取回执失败: ${error.message}`, 'danger');
+          updateReceiptStatus(`${t('waitReceipt.fetchFailed')}: ${error.message}`, 'danger');
           closeBtn.classList.remove('d-none');
 
           // 清除倒计时

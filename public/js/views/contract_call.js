@@ -6,6 +6,7 @@ import { showToast } from '../utils.js';
 import { currentSigner } from '../state.js';
 import TransactionConfirm from '../widgets/transaction_confirm.js';
 import WaitReceipt from '../widgets/wait_receipt.js';
+import { t } from '../i18n.js';
 
 // 合约实例缓存
 const contractInstances = {};
@@ -45,8 +46,8 @@ async function callContractFunction(address, contractName, functionName, args, o
     }
     return await response.json();
   } catch (error) {
-    console.error('Error calling contract function:', error);
-    showToast('Error', 'Failed to call contract function: ' + error.message);
+    console.error(t('contract.failedToCallFunction') + ':', error);
+    showToast(t('common.error'), t('contract.failedToCallFunction') + ': ' + error.message);
     throw error;
   }
 }
@@ -74,8 +75,8 @@ function renderFunctionCard(fn, index, isRead) {
       <div class="card-header bg-light">
         <div class="d-flex justify-content-between align-items-center">
           <span>${fn.name}</span>
-          ${payable ? '<span class="badge bg-warning">Payable</span>' : ''}
-          ${!isRead && signerType === 'wallet' ? '<span class="badge bg-danger">Wallet</span>' : ''}
+          ${payable ? `<span class="badge bg-warning">${t('contract.payable')}</span>` : ''}
+          ${!isRead && signerType === 'wallet' ? `<span class="badge bg-danger">${t('contract.wallet')}</span>` : ''}
         </div>
       </div>
       <div class="card-body">
@@ -83,24 +84,24 @@ function renderFunctionCard(fn, index, isRead) {
           ${fn.inputs.length > 0 ? fn.inputs.map((input, i) => `
             <div class="function-param">
               <label class="form-label">${input.name || 'param' + i} (${input.type})</label>
-              <input type="text" class="form-control function-input" data-type="${input.type}" placeholder="${input.type}">
+              <input type="text" class="form-control function-input" data-type="${input.type}" placeholder="${t('contract.paramPlaceholder').replace('{type}', input.type)}">
             </div>
-          `).join('') : '<p class="text-muted small mb-3">No parameters required</p>'}
+          `).join('') : `<p class="text-muted small mb-3">${t('contract.noParams')}</p>`}
 
           ${payable ? `
             <div class="function-param">
-              <label class="form-label">Value (ETH)</label>
+              <label class="form-label">${t('contract.value')}</label>
               <input type="text" class="form-control function-value" placeholder="0">
             </div>
           ` : ''}
 
           <button type="submit" class="btn btn-sm ${buttonClass} call-function-btn" data-is-read="${isRead}">
-            ${isRead ? '调用' : (signerType === 'wallet' ? '使用钱包发送' : '发送')}
+            ${isRead ? t('contract.callFunction') : (signerType === 'wallet' ? t('contract.sendWithWallet') : t('contract.sendFunction'))}
           </button>
 
           <div class="function-result mt-3" style="display: none;">
             <div class="d-flex justify-content-between">
-              <h6>结果:</h6>
+              <h6>${t('contract.result')}</h6>
               <button type="button" class="btn-close clear-result-btn" aria-label="Close"></button>
             </div>
             <pre class="mt-2"></pre>
@@ -130,12 +131,12 @@ export async function loadContractInstance(address, contract) {
     }
     
     if (!contract) {
-      showToast('Error', 'Contract ABI not found');
+      showToast(t('common.error'), t('contract.invalidParams'));
       return;
     }
   }
   if (!address) {
-    showToast('Error', 'Contract address not specified');
+    showToast(t('common.error'), t('contract.missingAddressOrFunction'));
     return;
   }
 
@@ -162,7 +163,7 @@ export async function loadContractInstance(address, contract) {
     if (readFns.length > 0) {
       readFunctions.innerHTML = readFns.map((fn, index) => renderFunctionCard(fn, index, true)).join('');
     } else {
-      readFunctions.innerHTML = '<p class="text-center text-muted">无可用读取函数</p>';
+      readFunctions.innerHTML = `<p class="text-center text-muted">${t('contract.noReadFunctions')}</p>`;
     }
 
     // 显示写入函数
@@ -170,7 +171,7 @@ export async function loadContractInstance(address, contract) {
     if (writeFns.length > 0) {
       writeFunctions.innerHTML = writeFns.map((fn, index) => renderFunctionCard(fn, index, false)).join('');
     } else {
-      writeFunctions.innerHTML = '<p class="text-center text-muted">无可用写入函数</p>';
+      writeFunctions.innerHTML = `<p class="text-center text-muted">${t('contract.noWriteFunctions')}</p>`;
     }
 
     // 保存合约实例
@@ -203,8 +204,8 @@ export async function loadContractInstance(address, contract) {
       });
     });
   } catch (error) {
-    console.error('Error loading contract instance:', error);
-    showToast('Error', 'Failed to load contract instance: ' + error.message);
+    console.error(t('contract.failedToLoad') + ':', error);
+    showToast(t('common.error'), t('contract.failedToLoad') + ': ' + error.message);
   }
 }
 
@@ -225,7 +226,7 @@ async function readonlyCall(e, contract) {
   const address = document.getElementById('contractAddress').value;
   
   if (!address || !functionName || !contract) {
-    showToast('Error', 'Missing contract address or function name');
+    showToast(t('common.error'), t('contract.missingAddressOrFunction'));
     return;
   }
 
@@ -242,7 +243,7 @@ async function readonlyCall(e, contract) {
   try {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${t('contract.processing')}`;
 
     // 调用合约函数
     const data = await callContractFunction(
@@ -261,12 +262,12 @@ async function readonlyCall(e, contract) {
       resultElement.classList.remove('text-danger');
       resultElement.classList.add('text-success');
     } else {
-      resultPre.textContent = data.error || '未知错误';
+      resultPre.textContent = data.error || t('contract.unknownError');
       resultElement.classList.remove('text-success');
       resultElement.classList.add('text-danger');
     }
   } catch (error) {
-    console.error('Error calling function:', error);
+    console.error(t('contract.failedToCallFunction') + ':', error);
     resultElement.style.display = 'block';
     resultPre.textContent = error.message;
     resultElement.classList.remove('text-success');
@@ -274,7 +275,7 @@ async function readonlyCall(e, contract) {
   } finally {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    submitBtn.textContent = '调用';
+    submitBtn.textContent = t('contract.callFunction');
   }
 }
 
@@ -291,7 +292,7 @@ async function writeCall(e, contract) {
   const address = document.getElementById('contractAddress').value;
   
   if (!address || !functionName || !contract) {
-    showToast('Error', 'Missing contract address or function name');
+    showToast(t('common.error'), t('contract.missingAddressOrFunction'));
     return;
   }
 
@@ -315,7 +316,7 @@ async function writeCall(e, contract) {
   try {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${t('contract.processing')}`;
 
     // 调用合约函数
     callContractFunction(
@@ -336,14 +337,14 @@ async function writeCall(e, contract) {
         resultElement.classList.remove('text-danger');
         resultElement.classList.add('text-success');
       } else {
-        resultPre.textContent = data.error || '未知错误';
+        resultPre.textContent = data.error || t('contract.unknownError');
         resultElement.classList.remove('text-success');
         resultElement.classList.add('text-danger');
       }
     });
 
   } catch (error) {
-    console.error('Error calling function:', error);
+    console.error(t('contract.failedToCallFunction') + ':', error);
     resultElement.style.display = 'block';
     resultPre.textContent = error.message;
     resultElement.classList.remove('text-success');
@@ -351,7 +352,7 @@ async function writeCall(e, contract) {
   } finally {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    submitBtn.textContent = '发送';
+    submitBtn.textContent = t('contract.sendFunction');
   }
 }
 
@@ -375,7 +376,7 @@ async function walletCall(e, contract) {
   }
 
   if (!address || !functionName || !contract) {
-    showToast('Error', 'Missing contract address or function name');
+    showToast(t('common.error'), t('contract.missingAddressOrFunction'));
     return;
   }
 
@@ -398,7 +399,7 @@ async function walletCall(e, contract) {
 
   const submitBtn = form.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+  submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${t('contract.processing')}`;
 
   // 准备调用合约的交易数据
   const contractABI = contract.abi;
@@ -420,7 +421,7 @@ async function walletCall(e, contract) {
   .then(response => {
     if (!response.ok) {
       console.error(response.statusText);
-      throw new Error(`Failed to prepare transaction: ${response.statusText}`);
+      throw new Error(`${t('contract.failedToPrepareTransaction')}: ${response.statusText}`);
     }
     
     response.json().then(data => {
@@ -432,7 +433,7 @@ async function walletCall(e, contract) {
     
   })
   .catch (error => {
-    console.error('Error calling function:', error);
+    console.error(t('contract.failedToCallFunction') + ':', error);
     resultElement.style.display = 'block';
     resultPre.textContent = error.message;
     resultElement.classList.remove('text-success');
@@ -441,7 +442,7 @@ async function walletCall(e, contract) {
   .finally(()=>{
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    submitBtn.textContent = '使用钱包发送';
+    submitBtn.textContent = t('contract.sendWithWallet');
   });
 
 }
@@ -459,7 +460,7 @@ export function initContractCallView(contract) {
       if (address) {
         loadContractInstance(address, contract);
       } else {
-        showToast('Error', 'Please enter a contract address');
+        showToast(t('common.error'), t('contract.enterContractAddress'));
       }
     });
   }
@@ -486,32 +487,32 @@ export function renderContractCall() {
     <div class="card">
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">合约交互</h5>
+          <h5 class="mb-0">${t('contract.interaction')}</h5>
         </div>
       </div>
       <div class="card-body">
         <div class="mb-3">
-          <label for="contractAddress" class="form-label">合约地址</label>
+          <label for="contractAddress" class="form-label">${t('contract.address')}</label>
           <div class="input-group">
-            <input type="text" class="form-control" id="contractAddress" placeholder="输入已部署的合约地址">
-            <button class="btn btn-primary" id="loadContractBtn">加载合约</button>
+            <input type="text" class="form-control" id="contractAddress" placeholder="${t('contract.inputAddress')}">
+            <button class="btn btn-primary" id="loadContractBtn">${t('contract.loadContract')}</button>
           </div>
         </div>
 
         <div class="row">
           <div class="col-md-6" style="padding: 10px;">
             <div class="card">
-              <h5>读取函数</h5>
+              <h5>${t('contract.readFunctions')}</h5>
               <div id="readFunctions">
-                <p class="text-center text-muted">请先加载合约</p>
+                <p class="text-center text-muted">${t('contract.pleaseLoadContract')}</p>
               </div>
             </div>
           </div>
           <div class="col-md-6" style="padding: 10px;">
             <div class="card">
-              <h5>写入函数</h5>
+              <h5>${t('contract.writeFunctions')}</h5>
               <div id="writeFunctions">
-                <p class="text-center text-muted">请先加载合约</p>
+                <p class="text-center text-muted">${t('contract.pleaseLoadContract')}</p>
               </div>
             </div>
           </div>

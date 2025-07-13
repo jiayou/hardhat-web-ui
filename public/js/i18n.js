@@ -35,6 +35,15 @@ export async function initI18n() {
 
     // 触发翻译事件
     translatePage();
+
+    // 标记i18n已初始化完成
+    window.i18nInitialized = true;
+
+    // 触发i18n初始化完成事件，供其他模块使用
+    const event = new CustomEvent('i18n-initialized');
+    document.dispatchEvent(event);
+
+    console.log('i18n initialization completed');
   } catch (error) {
     console.error('加载语言包失败:', error);
   }

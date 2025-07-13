@@ -4,6 +4,7 @@
 
 import { showToast, formatDateTime, shortenAddress, copyToClipboard } from '../utils.js';
 import TransactionItemView from './transaction_item.js';
+import { t } from '../i18n.js';
 
 /**
  * 渲染交易列表视图
@@ -24,12 +25,12 @@ const TransactionListView = async () => {
       <div class="row mt-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
-            <h2>最近交易</h2>
+            <h2>${t('transaction.list')}</h2>
             <div>
               <form id="txSearchForm" class="mt-3">
                 <div class="input-group mb-3">
-                  <input type="text" class="form-control" placeholder="输入交易哈希" id="txHashInput">
-                  <button class="btn btn-primary" type="submit">查询</button>
+                  <input type="text" class="form-control" placeholder="${t('transaction.inputHash')}" id="txHashInput">
+                  <button class="btn btn-primary" type="submit">${t('transaction.search')}</button>
                 </div>
               </form>
             </div>
@@ -39,14 +40,14 @@ const TransactionListView = async () => {
               <table class="table table-striped">
                 <thead>
                   <tr>
-                    <th scope="col">交易哈希</th>
-                    <th scope="col">发送方</th>
-                    <th scope="col">接收方</th>
-                    <th scope="col">金额</th>
-                    <th scope="col">Gas Price</th>
-                    <th scope="col">Gas Limit</th>
-                    <th scope="col">Nonce</th>
-                    <th scope="col">区块</th>
+                    <th scope="col">${t('transaction.hash')}</th>
+                    <th scope="col">${t('transaction.from')}</th>
+                    <th scope="col">${t('transaction.to')}</th>
+                    <th scope="col">${t('transaction.value')}</th>
+                    <th scope="col">${t('transaction.gasPrice')}</th>
+                    <th scope="col">${t('transaction.gasLimit')}</th>
+                    <th scope="col">${t('transaction.nonce')}</th>
+                    <th scope="col">${t('block.number')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,7 +55,7 @@ const TransactionListView = async () => {
                     <tr>
                       <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.hash}"><i class="bi bi-clipboard"></i></button></td>
                       <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.from}"><i class="bi bi-clipboard"></i></button></td>
-                      <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                      <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : `<span class="badge bg-info">${t('transaction.contractCreation')}</span>`}</td>
                       <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
                       <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
                       <td>${tx.gasLimit}</td>
@@ -65,7 +66,7 @@ const TransactionListView = async () => {
                 </tbody>
               </table>
               <div class="d-flex justify-content-center mt-3">
-                <button id="loadMoreTxBtn" class="btn btn-outline-primary" data-next-block="${nextBlock}">加载更多</button>
+                <button id="loadMoreTxBtn" class="btn btn-outline-primary" data-next-block="${nextBlock}">${t('transaction.loadMore')}</button>
               </div>
             </div>
           </div>
@@ -73,9 +74,9 @@ const TransactionListView = async () => {
       </div>
     `;
   } catch (error) {
-    console.error('Error rendering transaction list view:', error);
-    showToast('Error', 'Failed to load transaction list data');
-    return `<div class="alert alert-danger m-5">Failed to load transaction list data: ${error.message}</div>`;
+    console.error(`${t('error.loadingError')}: ${error}`);
+    showToast(t('common.error'), t('transaction.noTransactions'));
+    return `<div class="alert alert-danger m-5">${t('transaction.noTransactions')}: ${error.message}</div>`;
   }
 };
 
@@ -90,7 +91,7 @@ TransactionListView.init = () => {
       const textToCopy = btn.getAttribute('data-copy');
       if (textToCopy) {
         copyToClipboard(textToCopy);
-        showToast('成功', '已复制到剪贴板');
+        showToast(t('common.success'), t('transaction.copySuccess'));
       }
     }
   });
@@ -136,7 +137,7 @@ TransactionListView.init = () => {
               row.innerHTML = `
                 <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.hash}"><i class="bi bi-clipboard"></i></button></td>
                 <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.from}"><i class="bi bi-clipboard"></i></button></td>
-                <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : '<span class="badge bg-info">合约创建</span>'}</td>
+                <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a> <button class="btn btn-sm btn-outline-secondary copy-btn" data-copy="${tx.to}"><i class="bi bi-clipboard"></i></button>` : `<span class="badge bg-info">${t('transaction.contractCreation')}</span>`}</td>
                 <td>${tx.value ? (parseInt(tx.value) / 1e18).toFixed(6) + ' ETH' : '0 ETH'}</td>
                 <td>${tx.gasPrice ? (parseInt(tx.gasPrice) / 1e9) + ' Gwei' : 'N/A'}</td>
                 <td>${tx.gasLimit}</td>
@@ -151,11 +152,11 @@ TransactionListView.init = () => {
           } else {
             // 没有更多数据时隐藏按钮
             loadMoreTxBtn.classList.add('d-none');
-            showToast('提示', '没有更多交易数据');
+            showToast(t('transaction.hint'), t('transaction.noMoreTransactions'));
           }
         } catch (error) {
-          console.error('Error loading more transactions:', error);
-          showToast('Error', 'Failed to load more transactions');
+          console.error(`${t('error.loadingError')}: ${error}`);
+          showToast(t('common.error'), t('transaction.loadMoreFailed'));
         }
       }
     });

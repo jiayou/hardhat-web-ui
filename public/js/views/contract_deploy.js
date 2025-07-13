@@ -7,6 +7,7 @@ import { currentSigner } from '../state.js';
 import { getCurrentContract } from './contract.js';
 import TransactionConfirm from '../widgets/transaction_confirm.js';
 import WaitReceipt from '../widgets/wait_receipt.js';
+import { t } from '../i18n.js';
 
 /**
  * 渲染合约部署视图
@@ -17,12 +18,12 @@ export function renderContractDeploy() {
     <div class="card">
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">部署合约</h5>
+          <h5 class="mb-0">${t('contract.deployContract')}</h5>
         </div>
       </div>
       <div class="card-body">
         <div id="constructorParams" class="my-4"></div>
-        <button id="deployBtn" class="btn btn-primary">部署合约</button>
+        <button id="deployBtn" class="btn btn-primary">${t('contract.deployContract')}</button>
         <div id="deployResult" class="mt-4"></div>
       </div>
     </div>
@@ -43,15 +44,15 @@ export function renderDeployForm(contract) {
   const constructor = contract.abi.find(item => item.type === 'constructor');
 
   if (constructor && constructor.inputs.length > 0) {
-    constructorParams.innerHTML = '<h6 class="mb-3">构造函数参数:</h6>' +
+    constructorParams.innerHTML = `<h6 class="mb-3">${t('contract.constructorParams')}:</h6>` +
       constructor.inputs.map((input, index) => `
         <div class="mb-3">
           <label class="form-label">${input.name || 'param' + index} (${input.type})</label>
-          <input type="text" class="form-control constructor-param" data-type="${input.type}" placeholder="Enter ${input.type}">
+          <input type="text" class="form-control constructor-param" data-type="${input.type}" placeholder="${t('contract.paramPlaceholder').replace('{type}', input.type)}">
         </div>
       `).join('');
   } else {
-    constructorParams.innerHTML = '<p class="text-muted">无需构造函数参数</p>';
+    constructorParams.innerHTML = `<p class="text-muted">${t('contract.noConstructorParams')}</p>`;
   }
 
   // 清空部署结果区域
@@ -81,26 +82,26 @@ export function initContractDeployView(onDeploySuccess) {
     if (constructor && constructor.inputs.length > 0) {
       const paramInputs = document.querySelectorAll('.constructor-param');
       if (paramInputs.length !== constructor.inputs.length) {
-        showToast('Error', 'Invalid constructor parameters');
+        showToast(t('common.error'), t('contract.invalidParams'));
         return;
       }
 
       for (let i = 0; i < paramInputs.length; i++) {
         const value = paramInputs[i].value.trim();
         if (!value && !constructor.inputs[i].name.includes('optional')) {
-          showToast('Error', `Parameter ${constructor.inputs[i].name || i} is required`);
+          showToast(t('common.error'), t('contract.paramRequired').replace('{name}', constructor.inputs[i].name || i));
           return;
         }
         args.push(value);
       }
     }
     else {
-      showToast('Error', 'Invalid constructor parameters');
+      showToast(t('common.error'), t('contract.invalidParams'));
       return;
     }
 
     deployBtn.disabled = true;
-    deployBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 部署中...';
+    deployBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${t('contract.deploying')}`;
       
     // 获取当前签名者类型
     const signerInfo = currentSigner();
@@ -111,8 +112,8 @@ export function initContractDeployView(onDeploySuccess) {
       if (!window.ethereum) {
         deployResult.innerHTML = `
           <div class="alert alert-danger">
-            <h5>部署失败</h5>
-            <p>未检测到MetaMask或其他以太坊钱包</p>
+            <h5>${t('contract.deployFailed')}</h5>
+            <p>${t('contract.noWallet')}</p>
           </div>
         `;
         // TODO:WALLET
@@ -133,7 +134,7 @@ export function initContractDeployView(onDeploySuccess) {
       })
       .then(response => {
         if (!response.ok) {
-          showToast('Error', '准备部署失败:' + response.statusText);
+          showToast(t('common.error'), t('contract.prepareDeployFailed') + ': ' + response.statusText);
           return;
         }
 
@@ -145,11 +146,11 @@ export function initContractDeployView(onDeploySuccess) {
 
       })
       .catch (error => {
-        console.error('Error deploying contract:', error);
-        showToast('Error', 'Failed to deploy contract: ' + error.message);
+        console.error(t('contract.deployError') + ':', error);
+        showToast(t('common.error'), t('contract.deployError') + ': ' + error.message);
         document.getElementById('deployResult').innerHTML = `
           <div class="alert alert-danger">
-            <h5>部署失败</h5>
+            <h5>${t('contract.deployFailed')}</h5>
             <p>${error.message}</p>
           </div>
         `;
@@ -186,11 +187,11 @@ export function initContractDeployView(onDeploySuccess) {
         })
       })
       .catch (error => {
-        console.error('Error deploying contract:', error);
-        showToast('Error', 'Failed to deploy contract: ' + error.message);
+        console.error(t('contract.deployError') + ':', error);
+        showToast(t('common.error'), t('contract.deployError') + ': ' + error.message);
         document.getElementById('deployResult').innerHTML = `
           <div class="alert alert-danger">
-            <h5>部署失败</h5>
+            <h5>${t('contract.deployFailed')}</h5>
             <p>${error.message}</p>
           </div>
         `;
@@ -199,7 +200,7 @@ export function initContractDeployView(onDeploySuccess) {
       .finally(() => {
         const deployBtn = document.getElementById('deployBtn');
         deployBtn.disabled = false;
-        deployBtn.textContent = '部署合约';
+        deployBtn.textContent = t('contract.deployContract');
       })
     }
 

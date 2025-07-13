@@ -4,6 +4,7 @@
 
 import { showToast } from '../utils.js';
 import WaitReceipt from './wait_receipt.js'
+import { t } from '../i18n.js';
 /**
  * 转账确认模态框组件
  */
@@ -53,20 +54,20 @@ const TransactionConfirm = {
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="transactionConfirmModalLabel">确认交易</h5>
+              <h5 class="modal-title" id="transactionConfirmModalLabel">${t('transactionConfirm.title')}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <h6 class="mb-3">您即将确认以下交易：</h6>
+              <h6 class="mb-3">${t('transactionConfirm.aboutToConfirm')}</h6>
               <div class="table-responsive">
                 <table class="table table-bordered table-sm">
                   <tbody>
                     <tr>
-                      <th class="table-light" style="width: 25%">发送地址</th>
+                      <th class="table-light" style="width: 25%">${t('transactionConfirm.fromAddress')}</th>
                       <td><code>${fromAddress}</code></td>
                     </tr>
                     <tr>
-                      <th class="table-light">接收地址</th>
+                      <th class="table-light">${t('transactionConfirm.toAddress')}</th>
                       <td><code>${targetAddress}</code></td>
                     </tr>`;
     
@@ -74,7 +75,7 @@ const TransactionConfirm = {
     if (amount !== undefined) {
       modalBody += `
                     <tr>
-                      <th class="table-light">金额</th>
+                      <th class="table-light">${t('transactionConfirm.amount')}</th>
                       <td><strong id="amount">${amount} ETH</strong></td>
                     </tr>`;
     }
@@ -88,41 +89,41 @@ const TransactionConfirm = {
       
       modalBody += `
                     <tr>
-                      <th class="table-light">数据</th>
-                      <td>${dataBytes} 字节</td>
+                      <th class="table-light">${t('transactionConfirm.data')}</th>
+                      <td>${dataBytes} ${t('transactionConfirm.bytes')}</td>
                     </tr>`;
     }
     
     // 添加其余表格行
     modalBody += `
                     <tr>
-                      <th class="table-light">Gas价格</th>
+                      <th class="table-light">${t('transactionConfirm.gasPrice')}</th>
                       <td>${gasPrice} Gwei</td>
                     </tr>
                     <tr>
-                      <th class="table-light">Gas上限</th>
+                      <th class="table-light">${t('transactionConfirm.gasLimit')}</th>
                       <td>
                         <div class="input-group">
                           <input type="number" class="form-control form-control-sm" id="gasInput" value="${gas}">
-                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetGasBtn" title="还原原值">
+                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetGasBtn" title="${t('transactionConfirm.restoreOriginal')}">
                             <i class="bi bi-arrow-counterclockwise"></i>
                           </button>
                         </div>
                       </td>
                     </tr>
                     <tr>
-                      <th class="table-light">Nonce</th>
+                      <th class="table-light">${t('transactionConfirm.nonce')}</th>
                       <td>
                         <div class="input-group">
                           <input type="number" class="form-control form-control-sm" id="nonceInput" value="${nonce}">
-                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetNonceBtn" title="还原原值">
+                          <button class="btn btn-outline-secondary btn-sm" type="button" id="resetNonceBtn" title="${t('transactionConfirm.restoreOriginal')}">
                             <i class="bi bi-arrow-counterclockwise"></i>
                           </button>
                         </div>
                       </td>
                     </tr>
                     <tr>
-                      <th class="table-light">链ID</th>
+                      <th class="table-light">${t('transactionConfirm.chainId')}</th>
                       <td>${chainId}</td>
                     </tr>
                   </tbody>
@@ -134,18 +135,18 @@ const TransactionConfirm = {
                     <div class="spinner-border spinner-border-sm me-2" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
-                    <span id="txStatusMessage">交易处理中...</span>
+                    <span id="txStatusMessage">${t('transactionConfirm.transactionProcessing')}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div class="modal-footer" id="modalButtons">
               <div class="me-auto">
-                <small class="text-muted">费用预估: <span id="feeEstimate">0.0000 ETH</span></small>
+                <small class="text-muted">${t('transactionConfirm.feeEstimate')}: <span id="feeEstimate">0.0000 ETH</span></small>
               </div>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">取消</button>
-              <button type="button" class="btn btn-danger" id="walletTransactionBtn">钱包交易</button>
-              <button type="button" class="btn btn-success d-none" id="closeBtn" data-bs-dismiss="modal">关闭</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">${t('transactionConfirm.cancel')}</button>
+              <button type="button" class="btn btn-danger" id="walletTransactionBtn">${t('transactionConfirm.walletTransaction')}</button>
+              <button type="button" class="btn btn-success d-none" id="closeBtn" data-bs-dismiss="modal">${t('transactionConfirm.close')}</button>
             </div>
           </div>
         </div>
@@ -198,7 +199,7 @@ const TransactionConfirm = {
               statusContainer.querySelector('.d-flex').prepend(successIcon);
               
               const txStatusElem = document.getElementById('txStatusMessage');
-              txStatusElem.innerHTML = `交易成功! <a href="#" id="viewReceiptLink2" class="text-primary">查看回执</a>`;
+              txStatusElem.innerHTML = `${t('transactionConfirm.transactionSuccess')} <a href="#" id="viewReceiptLink2" class="text-primary">${t('transactionConfirm.viewReceipt')}</a>`;
               
               document.getElementById('viewReceiptLink2')?.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -214,7 +215,7 @@ const TransactionConfirm = {
               statusContainer.querySelector('.d-flex').prepend(errorIcon);
               
               const txStatusElem = document.getElementById('txStatusMessage');
-              txStatusElem.innerHTML = `交易失败! <a href="#" id="viewReceiptLink2" class="text-primary">查看回执</a>`;
+              txStatusElem.innerHTML = `${t('transactionConfirm.transactionFailed')} <a href="#" id="viewReceiptLink2" class="text-primary">${t('transactionConfirm.viewReceipt')}</a>`;
               
               document.getElementById('viewReceiptLink2')?.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -226,7 +227,7 @@ const TransactionConfirm = {
             clearInterval(pollInterval);
             const txStatusElem = document.getElementById('txStatusMessage');
             if (txStatusElem) {
-              txStatusElem.textContent = `交易处理时间过长，请稍后查看状态`;
+              txStatusElem.textContent = t('transactionConfirm.processingTooLong');
             }
           }
           // 如果没有收到回执，继续轮询
@@ -303,7 +304,7 @@ const TransactionConfirm = {
 
     // 监听钱包转账按钮
     document.getElementById('walletTransactionBtn')?.addEventListener('click', () => {
-      showTxStatus('请在钱包中确认交易...');
+      showTxStatus(t('transactionConfirm.confirmInWallet'));
 
       // 更新txData中的gas和nonce值
       const newGas = document.getElementById('gasInput').value;
@@ -322,9 +323,9 @@ const TransactionConfirm = {
       .then((txHash) => {
         console.log('Transaction sent with hash:', txHash);
         // 显示交易哈希
-        const txHashDisplay = `<div>交易已发送！交易哈希: ${txHash} <a href="#" id="viewReceiptLink" class="text-primary ms-2">查看回执</a></div>`;
+        const txHashDisplay = `<div>${t('transactionConfirm.transactionSent')}: ${txHash} <a href="#" id="viewReceiptLink" class="text-primary ms-2">${t('transactionConfirm.viewReceipt')}</a></div>`;
         showTxStatus(txHashDisplay);
-        showToast('Success', '交易已发送！交易哈希: ' + txHash);
+        showToast('Success', `${t('transactionConfirm.transactionSent')}: ${txHash}`);
         
         // 为查看回执链接添加事件监听
         document.getElementById('viewReceiptLink')?.addEventListener('click', (e) => {
@@ -340,8 +341,8 @@ const TransactionConfirm = {
       })
       .catch((error) => {
         console.error('Error sending transaction:', error);
-        showTxStatus('交易失败: ' + error.message, true);
-        showToast('Error', '交易失败: ' + error.message);
+        showTxStatus(`${t('transactionConfirm.transactionFailedWithError')}: ${error.message}`, true);
+        showToast('Error', `${t('transactionConfirm.transactionFailedWithError')}: ${error.message}`);
         // 显示关闭按钮
         updateButtonsForTx(true);
       });

@@ -98,8 +98,18 @@ class Router {
       }
     });
 
-    // 初始渲染
-    this.render();
+    // 等待i18n初始化完成后再初始渲染
+    document.addEventListener('DOMContentLoaded', () => {
+      // 确认i18n已加载完成后再渲染
+      // 我们使用自定义事件来确保i18n初始化完成
+      if (window.i18nInitialized) {
+        this.render();
+      } else {
+        document.addEventListener('i18n-initialized', () => {
+          this.render();
+        });
+      }
+    });
   }
 
   /**

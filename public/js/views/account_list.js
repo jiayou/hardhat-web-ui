@@ -3,6 +3,7 @@
  */
 
 import { showToast, shortenAddress } from '../utils.js';
+import { t } from '../i18n.js';
 
 /**
  * 获取账户列表
@@ -15,8 +16,8 @@ async function fetchAccounts() {
     }
     return await response.json();
   } catch (error) {
-    console.error('Error fetching accounts:', error);
-    showToast('Error', 'Failed to fetch accounts');
+    console.error(`${t('account.fetchError')}:`, error);
+    showToast(t('common.error'), t('account.fetchError'));
     throw error;
   }
 }
@@ -32,11 +33,11 @@ const AccountListView = async () => {
       <div class="col-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">账户查询</h5>
+            <h5 class="card-title">${t('account.search')}</h5>
             <form id="accountSearchForm" class="mt-3">
               <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="输入账户地址" id="addressInput">
-                <button class="btn btn-primary" type="submit">查询</button>
+                <input type="text" class="form-control" placeholder="${t('account.inputAddress')}" id="addressInput">
+                <button class="btn btn-primary" type="submit">${t('common.search')}</button>
               </div>
             </form>
           </div>
@@ -45,11 +46,11 @@ const AccountListView = async () => {
       <div class="col-12 mt-4">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">常用账户</h5>
+            <h5 class="card-title">${t('account.commonAccounts')}</h5>
             <div id="accountList" class="list-group mt-3">
               <div class="text-center">
                 <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Loading...</span>
+                  <span class="visually-hidden">${t('common.loading')}</span>
                 </div>
               </div>
             </div>
@@ -95,11 +96,11 @@ AccountListView.init = () => {
           `)
           .join('');
       } else {
-        accountList.innerHTML = '<div class="alert alert-light">无可用账户</div>';
+        accountList.innerHTML = `<div class="alert alert-light">${t('account.noAccounts')}</div>`;
       }
     }).catch(error => {
-      console.error('Failed to load account list', error);
-      accountList.innerHTML = '<div class="alert alert-danger">加载账户列表失败</div>';
+      console.error(`${t('account.loadFailed')}:`, error);
+      accountList.innerHTML = `<div class="alert alert-danger">${t('account.loadFailed')}</div>`;
     });
   }
 };

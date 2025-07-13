@@ -1,6 +1,7 @@
 /**
  * 合约信息视图模块
  */
+import { t } from '../i18n.js';
 
 /**
  * 渲染合约信息视图
@@ -10,18 +11,18 @@ export function renderContractInfo() {
   return `
     <div class="row">
       <div class="col-md-6">
-        <h5>合约信息</h5>
+        <h5>${t('contract.information')}</h5>
         <table class="table">
           <tbody id="contractDetails-info"></tbody>
         </table>
 
-        <h5 class="mt-4">合约字节码</h5>
+        <h5 class="mt-4">${t('contract.bytecodeDetail')}</h5>
         <div class="bytecode-container">
           <textarea id="contractBytecode" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
         </div>
       </div>
       <div class="col-md-6">
-        <h5>ABI</h5>
+        <h5>${t('contract.abi')}</h5>
         <div class="abi-container">
           <textarea id="contractAbi" class="form-control" readonly style="font-family: monospace; font-size: 0.85rem; height: 150px;"></textarea>
         </div>
@@ -48,10 +49,10 @@ export function updateContractInfoContent(contract, contractName) {
 
   // 显示合约信息
   const info = [
-    ['Name', contractName],
-    ['Bytecode Size', (contract.bytecode.length / 2 - 1) + ' bytes'],
-    ['Functions', contract.abi.filter(item => item.type === 'function').length],
-    ['Events', contract.abi.filter(item => item.type === 'event').length],
+    [t('contract.name'), contractName],
+    [t('contract.bytecodeSize'), (contract.bytecode.length / 2 - 1) + ' ' + t('contract.bytes')],
+    [t('contract.functions'), contract.abi.filter(item => item.type === 'function').length],
+    [t('contract.events'), contract.abi.filter(item => item.type === 'event').length],
   ];
 
   document.getElementById('contractDetails-info').innerHTML = info.map(([key, value]) =>

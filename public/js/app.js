@@ -85,6 +85,12 @@ function initLanguageSelector() {
     // 更新网络信息和Signer信息
     updateNetworkInfo();
     displayCurrentSigner();
+
+    // 重新渲染当前视图以更新所有动态生成的i18n文本
+    import('./router.js').then(module => {
+      const router = module.default;
+      router.render();
+    });
   });
 }
 

@@ -4,6 +4,7 @@
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
 import { getBatchSize, clearCache } from '../state.js';
+import { t } from '../i18n.js';
 
 // 区块缓存数据
 let blockData = [];
@@ -38,7 +39,7 @@ const renderBlockRow = (block) => {
       <td>${parseInt(block.gasLimit)}</td>
       <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
       <td><code style="overflow-x: auto; display: inline-block; max-width: 200px;">${shortenAddress(block.hash)}</code></td>
-      <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>详情</a></td>
+      <td><a href="/block?hash=${block.hash}" class="btn btn-sm btn-primary" data-link>${t('common.view')}</a></td>
     </tr>
   `;
 };
@@ -52,12 +53,12 @@ export async function fetchBlocks(blockNum = null, batchSize = getBatchSize()) {
   try {
     const response = await fetch(`/api/block?blockNum=${blockNum || ''}&batchSize=${batchSize}`);
     if (!response.ok) {
-      throw new Error(`Network error: ${response.status} ${response.statusText}`);
+      throw new Error(`${t('error.networkError')}: ${response.status} ${response.statusText}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Error fetching blocks:', error);
-    showToast('Error', 'Failed to fetch blocks');
+    console.error(t('block.fetchError'), error);
+    showToast(t('common.error'), t('block.failedToFetch'));
     throw error;
   }
 }
@@ -72,7 +73,7 @@ const renderBlockList = () => {
       <div class="row mt-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>区块列表</h2>
+            <h2>${t('block.list')}</h2>
           </div>
 
           <div class="card">
@@ -81,14 +82,14 @@ const renderBlockList = () => {
                 <table class="table table-hover">
                   <thead>
                     <tr>
-                      <th>区块高度</th>
-                      <th>时间戳</th>
-                      <th>交易数</th>
-                      <th>Gas Used</th>
-                      <th>Gas Limit</th>
-                      <th>Base Fee</th>
-                      <th>区块哈希</th>
-                      <th>操作</th>
+                      <th>${t('block.number')}</th>
+                      <th>${t('block.timestamp')}</th>
+                      <th>${t('block.transactions')}</th>
+                      <th>${t('block.gasUsed')}</th>
+                      <th>${t('block.gasLimit')}</th>
+                      <th>${t('block.baseFee')}</th>
+                      <th>${t('block.hash')}</th>
+                      <th>${t('common.action')}</th>
                     </tr>
                   </thead>
                   <tbody id="blockTableBody">
@@ -99,7 +100,7 @@ const renderBlockList = () => {
 
               <div class="text-center mt-4">
                 <button id="loadMoreBtn" class="btn btn-primary" ${nextBlock < 0 ? 'disabled' : ''}>
-                  加载更多
+                  ${t('block.loadMore')}
                 </button>
               </div>
             </div>
@@ -116,7 +117,7 @@ const loadMoreItems = async () => {
     if (nextBlock >= 0) {
       const loadMoreBtn = document.getElementById('loadMoreBtn');
       loadMoreBtn.disabled = true;
-      loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 加载中...';
+      loadMoreBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${t('common.loading')}`;
 
       const batchSize = getBatchSize();
       const result = await fetchBlocks(nextBlock, batchSize);
@@ -134,25 +135,25 @@ const loadMoreItems = async () => {
 
         // 更新按钮状态
         loadMoreBtn.disabled = result.nextBlock < 0;
-        loadMoreBtn.innerHTML = '加载更多';
+        loadMoreBtn.innerHTML = t('block.loadMore');
 
         // 如果没有更多区块可加载，禁用按钮
         if (result.nextBlock < 0) {
           loadMoreBtn.disabled = true;
-          loadMoreBtn.innerHTML = '没有更多区块';
+          loadMoreBtn.innerHTML = t('block.noMoreBlocks');
         }
       } else {
         loadMoreBtn.disabled = true;
-        loadMoreBtn.innerHTML = '没有更多区块';
+        loadMoreBtn.innerHTML = t('block.noMoreBlocks');
       }
     }
   } catch (error) {
-    console.error('加载更多区块失败:', error);
-    showToast('Error', '加载更多区块失败');
+    console.error(t('block.loadMoreError'), error);
+    showToast(t('common.error'), t('block.loadMoreFailed'));
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     if (loadMoreBtn) {
       loadMoreBtn.disabled = false;
-      loadMoreBtn.innerHTML = '重试加载';
+      loadMoreBtn.innerHTML = t('block.retryLoading');
     }
   }
 }

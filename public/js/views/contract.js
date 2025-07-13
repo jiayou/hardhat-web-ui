@@ -3,6 +3,7 @@
  */
 
 import { showToast } from '../utils.js';
+import { t } from '../i18n.js';
 import { renderContractInfo, initContractInfoView, updateContractInfoContent } from './contract_info.js';
 import { renderDeployForm, initContractDeployView, renderContractDeploy } from './contract_deploy.js';
 import { loadContractInstance, initContractCallView, renderContractCall } from './contract_call.js';
@@ -49,7 +50,7 @@ async function fetchContracts() {
     return await response.json();
   } catch (error) {
     console.error('Error loading contracts:', error);
-    showToast('Error', 'Failed to load contracts: ' + error.message);
+    showToast(t('common.error'), t('contract.failedToLoad') + ': ' + error.message);
     throw error;
   }
 }
@@ -68,7 +69,7 @@ async function fetchContractDetails(contractName) {
     return await response.json();
   } catch (error) {
     console.error('Error loading contract details:', error);
-    showToast('Error', 'Failed to load contract details: ' + error.message);
+    showToast(t('common.error'), t('contract.failedToLoadDetails') + ': ' + error.message);
     throw error;
   }
 }
@@ -138,39 +139,39 @@ const ContractView = async () => {
         <div class="col-md-3 sidebar">
           <div class="card mb-4">
             <div class="card-header bg-light">
-              <h5 class="mb-0">可用合约</h5>
+              <h5 class="mb-0" data-i18n="contract.availableContracts">${t('contract.availableContracts')}</h5>
             </div>
             <ul class="list-group list-group-flush contract-list" id="contractList">
               ${data.contracts && data.contracts.length > 0 ?
                 data.contracts.map(contract => `
                   <li class="list-group-item" data-contract="${contract}">${contract}</li>
                 `).join('') :
-                '<li class="list-group-item text-center">无可用合约</li>'}
+                `<li class="list-group-item text-center" data-i18n="contract.noContracts">${t('contract.noContracts')}</li>`}
             </ul>
           </div>
         </div>
         
         <div class="col-md-9">
           <div id="noContractSelected" class="text-center p-5">
-            <h4 class="text-secondary">请从左侧选择一个合约</h4>
-            <p class="text-muted">点击合约名称查看详情</p>
+            <h4 class="text-secondary" data-i18n="contract.selectFromLeft">${t('contract.selectFromLeft')}</h4>
+            <p class="text-muted" data-i18n="contract.clickToView">${t('contract.clickToView')}</p>
           </div>
           
           <div id="contractInfo" style="display: none;">
-            <h3 id="contractTitle" class="mb-4">Contract Name</h3>
+            <h3 id="contractTitle" class="mb-4"></h3>
             
             <ul class="nav nav-tabs" id="contractTabs" role="tablist">
               <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">详情</button>
+                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" data-i18n="contract.details">${t('contract.details')}</button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="deploy-tab" data-bs-toggle="tab" data-bs-target="#deploy" type="button" role="tab">部署</button>
+                <button class="nav-link" id="deploy-tab" data-bs-toggle="tab" data-bs-target="#deploy" type="button" role="tab" data-i18n="contract.deploy">${t('contract.deploy')}</button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="interact-tab" data-bs-toggle="tab" data-bs-target="#interact" type="button" role="tab">交互</button>
+                <button class="nav-link" id="interact-tab" data-bs-toggle="tab" data-bs-target="#interact" type="button" role="tab" data-i18n="contract.interact">${t('contract.interact')}</button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="source-tab" data-bs-toggle="tab" data-bs-target="#source" type="button" role="tab">源代码</button>
+                <button class="nav-link" id="source-tab" data-bs-toggle="tab" data-bs-target="#source" type="button" role="tab" data-i18n="contract.source">${t('contract.source')}</button>
               </li>
             </ul>
             
@@ -192,7 +193,7 @@ const ContractView = async () => {
               
               <!-- 源代码标签页 -->
               <div class="tab-pane fade" id="source" role="tabpanel">
-                <h5>源代码</h5>
+                <h5 data-i18n="contract.sourceCode">${t('contract.sourceCode')}</h5>
                 <pre><code id="contractSource" class="language-solidity"></code></pre>
               </div>
             </div>
@@ -202,8 +203,8 @@ const ContractView = async () => {
     `;
   } catch (error) {
     console.error('Error rendering contract view:', error);
-    showToast('Error', 'Failed to load contracts');
-    return `<div class="alert alert-danger m-5">Failed to load contracts: ${error.message}</div>`;
+    showToast(t('common.error'), t('contract.failedToLoad'));
+    return `<div class="alert alert-danger m-5">${t('contract.failedToLoad')}: ${error.message}</div>`;
   }
 };
 
@@ -258,7 +259,7 @@ async function loadContractDetails(contractName, tabToShow) {
     return Promise.resolve(null); // 如果没有合约数据，返回null
   } catch (error) {
     console.error('Error loading contract details:', error);
-    showToast('Error', 'Failed to load contract details: ' + error.message);
+    showToast(t('common.error'), t('contract.failedToLoadDetails') + ': ' + error.message);
     return Promise.reject(error); // 返回拒绝的Promise
   }
 }

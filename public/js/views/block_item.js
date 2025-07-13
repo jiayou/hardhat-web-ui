@@ -3,6 +3,7 @@
  */
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
+import { t } from '../i18n.js';
 
 /**
  * 渲染区块详情
@@ -16,7 +17,7 @@ const renderBlockDetails = async (blockHash) => {
     const data = await response.json();
 
     if (!data.block) {
-      return `<div class="alert alert-danger m-5">区块 ${blockHash} 未找到</div>`;
+      return `<div class="alert alert-danger m-5">${t('block.notFound')}: ${blockHash}</div>`;
     }
 
     // 获取最新区块高度，用于判断"下一个区块"按钮是否可用
@@ -30,93 +31,93 @@ const renderBlockDetails = async (blockHash) => {
       <div class="row mt-4">
         <div class="col-12 mb-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>区块 #${block.number}</h2>
+            <h2>${t('block.details')} #${block.number}</h2>
             <div class="btn-group">
               <a href="/block?hash=${block.parentHash}" class="btn btn-outline-primary" data-link>
-                <i class="bi bi-arrow-left"></i> 上一个区块
+                <i class="bi bi-arrow-left"></i> ${t('block.prevBlock')}
               </a>
               ${parseInt(block.number) < data.latestBlock ?
                 `<a href="#" class="btn btn-outline-primary next-block-btn" data-number="${parseInt(block.number) + 1}">
-                  下一个区块 <i class="bi bi-arrow-right"></i>
+                  ${t('block.nextBlock')} <i class="bi bi-arrow-right"></i>
                 </a>` :
                 `<button class="btn btn-outline-secondary" disabled>
-                  下一个区块 <i class="bi bi-arrow-right"></i>
+                  ${t('block.nextBlock')} <i class="bi bi-arrow-right"></i>
                 </button>`
               }
             </div>
           </div>
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">区块信息</h5>
+              <h5 class="card-title">${t('block.information')}</h5>
               <div class="table-responsive">
                 <table class="table">
                   <tbody>
                     <tr>
-                      <th scope="row">区块高度</th>
+                      <th scope="row">${t('block.height')}</th>
                       <td>${block.number}</td>
                     </tr>
                     <tr>
-                      <th scope="row">区块哈希</th>
+                      <th scope="row">${t('block.hash')}</th>
                       <td><code>${block.hash}</code></td>
                     </tr>
                     <tr>
-                      <th scope="row">父区块哈希</th>
+                      <th scope="row">${t('block.parentHash')}</th>
                       <td><code>${block.parentHash}</code></td>
                     </tr>
                     <tr>
-                      <th scope="row">时间戳</th>
+                      <th scope="row">${t('block.timestamp')}</th>
                       <td>${formatDateTime(block.timestamp)}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Gas Limit</th>
+                      <th scope="row">${t('block.gasLimit')}</th>
                       <td>${parseInt(block.gasLimit)}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Gas Used</th>
+                      <th scope="row">${t('block.gasUsed')}</th>
                       <td>${parseInt(block.gasUsed)}</td>
                     </tr>
                     <tr>
-                      <th scope="row">交易数</th>
+                      <th scope="row">${t('block.transactions')}</th>
                       <td>${block.txInfo.length}</td>
                     </tr>
                     <tr>
-                      <th scope="row">矿工</th>
+                      <th scope="row">${t('block.miner')}</th>
                       <td><a href="/account?address=${block.miner}" data-link>${block.miner}</a></td>
                     </tr>
                     <tr>
-                      <th scope="row">难度</th>
+                      <th scope="row">${t('block.difficulty')}</th>
                       <td>${parseInt(block.difficulty || 0)}</td>
                     </tr>
                     <tr>
-                      <th scope="row">总难度</th>
+                      <th scope="row">${t('block.totalDifficulty')}</th>
                       <td>${parseInt(block.totalDifficulty || 0)}</td>
                     </tr>
                     <tr>
-                      <th scope="row">大小</th>
-                      <td>${parseInt(block.size || 0)} bytes</td>
+                      <th scope="row">${t('block.size')}</th>
+                      <td>${parseInt(block.size || 0)} ${t('block.bytes')}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Nonce</th>
+                      <th scope="row">${t('block.nonce')}</th>
                       <td>${block.nonce || '0x0'}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Extra Data</th>
+                      <th scope="row">${t('block.extraData')}</th>
                       <td><code>${block.extraData || '0x'}</code></td>
                     </tr>
                     <tr>
-                      <th scope="row">Base Fee Per Gas</th>
+                      <th scope="row">${t('block.baseFeePerGas')}</th>
                       <td>${block.baseFeePerGas ? (parseInt(block.baseFeePerGas) / 1e9).toFixed(2) + ' Gwei' : 'N/A'}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Blob Gas Used</th>
+                      <th scope="row">${t('block.blobGasUsed')}</th>
                       <td>${block.blobGasUsed || 'N/A'}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Excess Blob Gas</th>
+                      <th scope="row">${t('block.excessBlobGas')}</th>
                       <td>${block.excessBlobGas || 'N/A'}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Prev Randao</th>
+                      <th scope="row">${t('block.prevRandao')}</th>
                       <td>${block.prevRandao || 'N/A'}</td>
                     </tr>
                   </tbody>
@@ -129,18 +130,18 @@ const renderBlockDetails = async (blockHash) => {
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">区块交易 (${block.txInfo.length})</h5>
+              <h5 class="card-title">${t('block.blockTransactions')} (${block.txInfo.length})</h5>
               <div class="table-responsive">
                 <table class="table table-hover">
                   <thead>
                     <tr>
-                      <th>交易哈希</th>
-                      <th>发送方</th>
-                      <th>接收方</th>
-                      <th>值</th>
-                      <th>Gas Price</th>
-                      <th>Gas Limit</th>
-                      <th>Nonce</th>
+                      <th>${t('transaction.hash')}</th>
+                      <th>${t('transaction.from')}</th>
+                      <th>${t('transaction.to')}</th>
+                      <th>${t('transaction.value')}</th>
+                      <th>${t('transaction.gasPrice')}</th>
+                      <th>${t('transaction.gasLimit')}</th>
+                      <th>${t('transaction.nonce')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -148,13 +149,13 @@ const renderBlockDetails = async (blockHash) => {
                       <tr>
                         <td><a href="/transaction?hash=${tx.hash}" data-link>${shortenAddress(tx.hash)}</a></td>
                         <td><a href="/account?address=${tx.from}" data-link>${shortenAddress(tx.from)}</a></td>
-                        <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : 'Contract Creation'}</td>
+                        <td>${tx.to ? `<a href="/account?address=${tx.to}" data-link>${shortenAddress(tx.to)}</a>` : `${t('transaction.contractCreation')}`}</td>
                         <td>${tx.value ? tx.value + ' ETH' : '0 ETH'}</td>
                         <td>${tx.gasPrice ? tx.gasPrice + ' Gwei' : 'N/A'}</td>
                         <td>${tx.gasLimit}</td>
                         <td>${tx.nonce || 0}</td>
                       </tr>
-                    `).join('') : '<tr><td colspan="7" class="text-center">No transactions</td></tr>'}
+                    `).join('') : `<tr><td colspan="7" class="text-center">${t('block.noTransactions')}</td></tr>`}
                   </tbody>
                 </table>
               </div>
@@ -164,9 +165,9 @@ const renderBlockDetails = async (blockHash) => {
       </div>
     `;
   } catch (error) {
-    console.error('Error rendering block details:', error);
-    showToast('Error', 'Failed to load block data');
-    return `<div class="alert alert-danger m-5">Failed to load block data: ${error.message}</div>`;
+    console.error(`${t('error.loadingError')}: ${error}`);
+    showToast(t('common.error'), t('block.failedToFetch'));
+    return `<div class="alert alert-danger m-5">${t('block.failedToFetch')}: ${error.message}</div>`;
   }
 };
 
@@ -188,11 +189,11 @@ const initBlockDetails = () => {
             // 导航到下一个区块的详情页
             window.location.href = `/block?hash=${data.block.hash}`;
           } else {
-            showToast('错误', `无法获取区块 #${nextBlockNum}`);
+            showToast(t('common.error'), `${t('block.notFound')} #${nextBlockNum}`);
           }
         } catch (error) {
-          console.error('获取下一个区块时出错:', error);
-          showToast('错误', '无法获取下一个区块');
+          console.error(`${t('block.getNextBlockError')}: ${error}`);
+          showToast(t('common.error'), t('block.getNextBlockError'));
         }
       }
     });
