@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
+const { isLiveNetwork } = require('../utils');
 
 
 // 获取账户列表
@@ -69,10 +70,12 @@ router.get('/:address', async (req, res) => {
       accountData.contractInfo = { bytecode: code };
     }
     
-    // 获取相关交易
-    // 注意：这里是简化实现，实际可能需要从区块链或数据库查询
-    const transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
-    
+    let transactions = {data: [], nextBlock: -1};
+    if (isLiveNetwork() === false) {
+      // 测试链：获取相关交易
+      transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
+    }
+
     // 返回符合前端期望的数据结构
     res.json({
       account: accountData,
