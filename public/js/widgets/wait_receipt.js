@@ -24,7 +24,7 @@ const WaitReceipt = {
     // 创建回执对话框
     const receiptModal = `
       <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="width: 50%; min-width: 640px; max-width: none;">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="receiptModalLabel">${t('waitReceipt.title')}</h5>
@@ -175,7 +175,7 @@ const WaitReceipt = {
       rows.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <th class="table-light" style="width: 40%">${row.label}</th>
+          <th class="table-light" style="width: 30%">${row.label}</th>
           <td style="word-break: break-all;"><code>${row.value}</code></td>
         `;
         tableBody.appendChild(tr);
