@@ -22,8 +22,6 @@
     "transactions": "交易",
     "accounts": "账户",
     "contracts": "合约",
-    "batchSizePrefix": "每次查找",
-    "batchSizeSuffix": "个区块",
     "signer": "签名者",
     "switchSigner": "切换",
     "network": "网络",

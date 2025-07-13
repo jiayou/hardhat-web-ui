@@ -12,8 +12,7 @@ import { t } from '../i18n.js';
  */
 const TransactionListView = async () => {
   try {
-    // fetch /api/transaction?blockNum=&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber
-    const response = await fetch('/api/transaction?batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber');
+    const response = await fetch('/api/transaction?fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber');
     const result = await response.json();
 
     // { nextBlock: 13, data: [[...]]}
@@ -124,7 +123,7 @@ TransactionListView.init = () => {
       const nextBlock = e.target.getAttribute('data-next-block');
       if (nextBlock) {
         try {
-          const response = await fetch(`/api/transaction?blockNum=${nextBlock}&batchSize=10&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber`);
+          const response = await fetch(`/api/transaction?blockNum=${nextBlock}&fields=hash,from,to,value,gasPrice,gasLimit,nonce,blockNumber`);
           const result = await response.json();
 
           if (result.data && result.data.length > 0) {

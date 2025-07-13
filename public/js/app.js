@@ -3,20 +3,15 @@
  */
 
 import { showToast } from './utils.js';
-import { initSettingsUI, currentSigner } from './state.js';
+import { currentSigner } from './state.js';
 import { openSignerDialog, displayCurrentSigner } from './widgets/signer.js';
 import { initI18n, switchLanguage, getCurrentLanguage, supportedLanguages, initMutationObserver, t } from './i18n.js';
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', async function() {
   
-  // 初始化全局设置
-  initSettingsUI();
-
   // 初始化i18n
   await initI18n();
   initMutationObserver();
-  
-  // 初始化语言切换器
   initLanguageSelector();
   
   // 初始化Socket.io连接

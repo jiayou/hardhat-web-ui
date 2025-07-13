@@ -27,10 +27,18 @@
 
 - 在本地网络+钱包测试 private PoA ok
 
-- 在sepolia网络测试
+## 在sepolia网络测试
+一个区块的交易数量高达300条，获取所有信息显然不现实。
+因此如果在live网络上，需要适当减少返回。
 
-- i18n
-- cdn按需切换
-- npm发布
+- batch size 由后端维护默认值10
+- is_live 由后端维护（在live状态下使用较少的batch size）
+- 前端请求 /api/network/is_live 根据情况决定渲染内容
+
+
+## i18n
+
+
+## npm发布
 
 

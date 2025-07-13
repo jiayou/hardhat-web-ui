@@ -3,7 +3,6 @@
  */
 
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
-import { getBatchSize, clearCache } from '../state.js';
 import { t } from '../i18n.js';
 
 // 区块缓存数据
@@ -46,12 +45,11 @@ const renderBlockRow = (block) => {
 /**
  * 获取区块列表
  * @param {number} blockNum - 起始区块号
- * @param {number} batchSize - 每批数量
  * @returns {Promise} 包含区块列表的Promise
  */
-export async function fetchBlocks(blockNum = null, batchSize = getBatchSize()) {
+export async function fetchBlocks(blockNum = null) {
   try {
-    const response = await fetch(`/api/block?blockNum=${blockNum || ''}&batchSize=${batchSize}`);
+    const response = await fetch(`/api/block?blockNum=${blockNum || ''}`);
     if (!response.ok) {
       throw new Error(`${t('error.networkError')}: ${response.status} ${response.statusText}`);
     }
@@ -119,8 +117,7 @@ const loadMoreItems = async () => {
       loadMoreBtn.disabled = true;
       loadMoreBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${t('common.loading')}`;
 
-      const batchSize = getBatchSize();
-      const result = await fetchBlocks(nextBlock, batchSize);
+      const result = await fetchBlocks(nextBlock);
 
       if (result.data && result.data.length > 0) {
         // 追加新区块到表格

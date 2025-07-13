@@ -22,8 +22,6 @@
     "transactions": "Transactions",
     "accounts": "Accounts",
     "contracts": "Contracts",
-    "batchSizePrefix": "Load",
-    "batchSizeSuffix": "blocks at a time",
     "signer": "Signer",
     "switchSigner": "Switch",
     "network": "Network",

@@ -36,4 +36,17 @@ router.get('/info', async (req, res) => {
   }
 });
 
+// 是否是公链（已知ID）
+router.get('/is_live', async (req, res) => {
+  const liveNetworkIds = [ 1, 11155111 ];
+  try {
+    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
+    res.json({ is_live: liveNetworkIds.includes(chainId) });
+  }
+  catch (error) {
+    res.json({ is_live: true });
+    // 在live网络下功能受限
+  } 
+})
+
 module.exports = router;
