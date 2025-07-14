@@ -27,6 +27,14 @@
     "network": "Network",
     "chainId": "Chain ID"
   },
+  "dashboard": {
+    "title": "Hardhat Network Dashboard",
+    "networkInfo": "Network Information",
+    "networkName": "Network Name",
+    "latestBlock": "Latest Block",
+    "gasPrice": "Gas Price",
+    "failedToLoad": "Failed to load dashboard data"
+  },
   "signer": {
     "selectSigner": "Select Signer",
     "hardhatTestAccounts": "Hardhat Test Accounts",
@@ -162,6 +170,9 @@
     "success": "Success"
   },
   "block": {
+    "search": "Search Block",
+    "inputBlockHashOrNumber": "Enter block number or hash",
+    "latestBlocks": "Latest Blocks",
     "details": "Block Details",
     "list": "Block List",
     "number": "Block Number",

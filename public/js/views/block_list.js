@@ -72,10 +72,10 @@ const renderBlockList = () => {
         <div class="col-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">查询区块</h5>
+              <h5 class="card-title">${t('block.search')}</h5>
               <form id="accountSearchForm" class="mt-3">
                 <div class="input-group mb-3">
-                  <input type="text" class="form-control" placeholder="请输入区块号或Hash" id="addressInput">
+                  <input type="text" class="form-control" placeholder="${t('block.inputBlockHashOrNumber')}" id="addressInput">
                   <button class="btn btn-primary" type="submit">${t('common.search')}</button>
                 </div>
               </form>
@@ -85,7 +85,7 @@ const renderBlockList = () => {
 
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5>最新区块</h5>
+            <h5>${t('block.latestBlocks')}</h5>
           </div>
 
           <div class="card">

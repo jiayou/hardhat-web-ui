@@ -27,6 +27,14 @@
     "network": "网络",
     "chainId": "Chain ID"
   },
+  "dashboard": {
+    "title": "Hardhat 网络仪表板",
+    "networkInfo": "网络信息",
+    "networkName": "网络名称",
+    "latestBlock": "最新区块",
+    "gasPrice": "Gas价格",
+    "failedToLoad": "加载仪表板数据失败"
+  },
   "home": {
     "welcome": "欢迎使用 Hardhat Web UI",
     "description": "这是一个用于与Hardhat网络交互的Web界面"
@@ -98,6 +106,9 @@
     "success": "成功"
   },
   "block": {
+    "search": "查询区块",
+    "inputBlockHashOrNumber": "请输入区块号或Hash",
+    "latestBlocks": "最新区块",
     "details": "区块详情",
     "list": "区块列表",
     "number": "区块号",

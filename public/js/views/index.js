@@ -2,7 +2,8 @@
  * 首页视图
  */
 
-import { showToast, formatDateTime } from '../utils.js';
+import { showToast } from '../utils.js';
+import { t } from '../i18n.js';
 
 /**
  * 渲染首页视图
@@ -15,35 +16,35 @@ const IndexView = async () => {
 
     // 更新网络信息显示
     if (networkData.network) {
-      document.getElementById('networkName').textContent = networkData.network.name || 'Unknown';
+      document.getElementById('networkName').textContent = networkData.network.name || t('common.unknown');
       document.getElementById('chainId').textContent = networkData.network.chainId || '-';
     }
-    
+
     return `
       <div class="row mt-4">
         <div class="col-md-12 mb-4">
-          <h2>Hardhat 网络仪表板</h2>
+          <h2>${t('dashboard.title')}</h2>
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">网络信息</h5>
+              <h5 class="card-title">${t('dashboard.networkInfo')}</h5>
               <div class="table-responsive">
                 <table class="table">
                   <tbody>
                     <tr>
-                      <th scope="row">网络名称</th>
-                      <td>${networkData.network?.name || 'Unknown'}</td>
+                      <th scope="row">${t('dashboard.networkName')}</th>
+                      <td>${networkData.network?.name || t('common.unknown')}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Chain ID</th>
+                      <th scope="row">${t('nav.chainId')}</th>
                       <td>${networkData.network?.chainId || '-'}</td>
                     </tr>
                     <tr>
-                      <th scope="row">最新区块</th>
-                      <td>${networkData.latestBlock?.number || 'Unknown'}</td>
+                      <th scope="row">${t('dashboard.latestBlock')}</th>
+                      <td>${networkData.latestBlock?.number || t('common.unknown')}</td>
                     </tr>
                     <tr>
-                      <th scope="row">Gas Price</th>
-                      <td>${networkData.gasPrice ? (parseInt(networkData.gasPrice) / 1e9) + ' Gwei' : 'Unknown'}</td>
+                      <th scope="row">${t('dashboard.gasPrice')}</th>
+                      <td>${networkData.gasPrice ? (parseInt(networkData.gasPrice) / 1e9) + ' Gwei' : t('common.unknown')}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -55,8 +56,8 @@ const IndexView = async () => {
     `;
   } catch (error) {
     console.error('Error rendering index view:', error);
-    showToast('Error', 'Failed to load dashboard data');
-    return `<div class="alert alert-danger m-5">Failed to load dashboard data: ${error.message}</div>`;
+    showToast(t('common.error'), t('dashboard.failedToLoad'));
+    return `<div class="alert alert-danger m-5">${t('dashboard.failedToLoad')}: ${error.message}</div>`;
   }
 };
 
