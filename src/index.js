@@ -5,13 +5,6 @@
 const { extendConfig, task } = require('hardhat/config');
 const { launchServer } = require('./server');
 
-// 扩展Hardhat配置
-extendConfig((config) => {
-  config.webUI = {
-    enabled: true,
-    port: 31337,
-  };
-});
 
 // 注册web-ui任务
 task('web-ui', 'Starts the web UI server for interacting with the blockchain')

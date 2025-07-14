@@ -8,7 +8,7 @@ const globalState = {
 
   currentSigner: null, // 将会是一个 { address: "0x...", type: "hardhat" 或 "wallet" } 对象
   hardhatAccounts: [],
-  isLiveNetwork: true, // 公链RPC性能限制
+  isLocalChain: false
 };
 
 // 初始化全局状态
@@ -27,7 +27,7 @@ async function initGlobalState() {
       globalState.currentSigner = localStorage.getItem('currentSigner') || null;
     }
 
-    globalState.isLiveNetwork = true
+    globalState.isLocalChain = false
 
   } catch (error) {
     console.error('初始化全局状态时出错:', error);
@@ -72,8 +72,12 @@ export function currentSigner(newSigner, type) {
 }
 
 
-export function isLiveNetwork() {
-  return globalState.isLiveNetwork
+export function isLocalChain(criteria) {
+  if (criteria !== undefined) {
+    globalState.isLocalChain = criteria
+    saveGlobalState();
+  }
+  return globalState.isLocalChain
 }
 
 

@@ -3,11 +3,12 @@
  */
 
 import { showToast, shortenAddress } from './utils.js';
-import { currentSigner } from './state.js';
+import { currentSigner, isLocalChain } from './state.js';
 import { openSignerDialog, displayCurrentSigner } from './widgets/signer.js';
 import { initI18n, switchLanguage, getCurrentLanguage, supportedLanguages, initMutationObserver, t } from './i18n.js';
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', async function() {
+  fetch('/api/network/is_local').then(response => response.json().then(data => isLocalChain(data.is_local)));
   
   // 初始化i18n
   await initI18n();

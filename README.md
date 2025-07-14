@@ -34,7 +34,7 @@ npx hardhat web-ui --network <network-name>
 npx hardhat web-ui --network localhost
 ```
 
-然后在浏览器中访问 http://localhost:31337
+然后在浏览器中访问 http://localhost:3337
 
 ## 配置
 
@@ -45,7 +45,7 @@ module.exports = {
   webUI: {
     enabled: true,
     localNetworkIds: [31337, ...],
-    port: 31337,
+    port: 3337,
   }
 };
 ```

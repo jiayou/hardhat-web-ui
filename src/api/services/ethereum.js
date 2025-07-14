@@ -1,4 +1,4 @@
-const { handleResult, isLiveNetwork } = require('../utils');
+const { handleResult, isLocalChain } = require('../utils');
 const { extractBlockInfo, useFields }= require('../utils');
 
 
@@ -38,14 +38,16 @@ async function getBlockById(hre, provider, blockId) {
     // return await formatBlockDetails(provider, block);
 
     let txInfo = [];
-    for (let tx_hash of block.transactions) {
-      if (isLiveNetwork(hre)) {
-        tx_item = { hash: tx_hash }
-      }
-      else {
+    if (isLocalChain(hre)) {
+      for (let tx_hash of block.transactions) {
         tx_item = await provider.getTransaction(tx_hash);
+        txInfo.push(handleResult(tx_item));
       }
-      txInfo.push(handleResult(tx_item));
+    }
+    else { // 公链：只返回交易hash
+      txInfo = block.transactions.map((tx_hash) => {
+        return { hash: tx_hash }
+      })
     }
 
     let block_info = handleResult(block)

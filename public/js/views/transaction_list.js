@@ -3,7 +3,7 @@
  */
 
 import { showToast, formatDateTime, shortenAddress, copyToClipboard } from '../utils.js';
-import { isLiveNetwork } from '../state.js';
+import { isLocalChain } from '../state.js';
 import { t } from '../i18n.js';
 
 /**
@@ -36,7 +36,7 @@ const TransactionListView = async () => {
           </div>
         </div>
 
-        ${isLiveNetwork() ? '': `
+        ${isLocalChain() ? `
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
             <h5>${t('transaction.list')}</h5>
@@ -77,7 +77,7 @@ const TransactionListView = async () => {
             </div>
           </div>
         </div>
-        `}
+        ` : ''}
 
       </div>
     `;

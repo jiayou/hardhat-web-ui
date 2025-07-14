@@ -4,7 +4,7 @@
 
 import { showToast, shortenAddress } from '../utils.js';
 import TransactionConfirm from '../widgets/transaction_confirm.js';
-import { currentSigner, isLiveNetwork } from '../state.js';
+import { currentSigner, isLocalChain } from '../state.js';
 import { t } from '../i18n.js';
 import WaitReceipt from '../widgets/wait_receipt.js';
 
@@ -121,7 +121,7 @@ const AccountItemView = async (address) => {
         </div>
         ` : ''}
 
-        ${isLiveNetwork() ? '' : `
+        ${isLocalChain() ? `
         <div class="col-12 mb-4">
           <div class="card">
             <div class="card-body">
@@ -158,7 +158,7 @@ const AccountItemView = async (address) => {
             </div>
           </div>
         </div>
-        `}
+        ` : ''}
 
       </div>
     `;

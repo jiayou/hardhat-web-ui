@@ -4,7 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
-const { isLiveNetwork } = require('../utils');
+const { isLocalChain } = require('../utils');
 
 // 获取交易列表
 router.get('/', async (req, res) => {
@@ -17,7 +17,8 @@ router.get('/', async (req, res) => {
     
     let result = {data: [], nextBlock: -1};
     const { hre } = req.app.locals;
-    if (isLiveNetwork(hre)===false) {
+    if (isLocalChain(hre)) {
+      // 测试链：获取相关交易
       result = await ethereum.searchTransactions(httpProvider, blockNum, batchSize, fields);
     }
     res.json(result);

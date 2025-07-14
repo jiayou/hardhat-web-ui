@@ -3,7 +3,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { isLiveNetwork, handleResult } = require('../utils');
+const { isLocalChain, handleResult } = require('../utils');
 
 // 获取最新区块高度
 router.get('/latest-block', async (req, res) => {
@@ -39,10 +39,10 @@ router.get('/info', async (req, res) => {
   }
 });
 
-// 是否是公链（已知ID）
-router.get('/is_live', async (req, res) => {
+// 是否是本地私链
+router.get('/is_local', async (req, res) => {
     const { hre } = req.app.locals;
-    res.json({ is_live: await isLiveNetwork(hre) });
+    res.json({ is_local: await isLocalChain(hre) });
 })
 
 module.exports = router;

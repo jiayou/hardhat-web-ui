@@ -32,8 +32,8 @@
 因此如果在live网络上，需要适当减少返回。
 
 - batch size 由后端维护默认值10
-- is_live 由后端维护（在live状态下使用较少的batch size）
-- 前端请求 /api/network/is_live 根据情况决定渲染内容
+- is_local 由后端维护（本地测试网络才请求更多信息）
+- 前端请求 /api/network/is_local 根据情况决定渲染内容
 
 
 ## i18n

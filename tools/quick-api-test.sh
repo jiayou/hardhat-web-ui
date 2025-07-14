@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Quick API test script for Hardhat Web UI
-# Tests all GET endpoints under localhost:31337/api/
+# Tests all GET endpoints under localhost:3337/api/
 
-BASE_URL="http://localhost:31337/api"
+BASE_URL="http://localhost:3337/api"
 
 # Helper function to test GET endpoints
 test_get_endpoint() {

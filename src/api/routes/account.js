@@ -4,7 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
-const { isLiveNetwork } = require('../utils');
+const { isLocalChain } = require('../utils');
 
 
 // 获取账户列表
@@ -72,7 +72,7 @@ router.get('/:address', async (req, res) => {
     
     let transactions = {data: [], nextBlock: -1};
     const { hre } = req.app.locals;
-    if (isLiveNetwork(hre) === false) {
+    if (isLocalChain(hre)) {
       // 测试链：获取相关交易
       transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
     }

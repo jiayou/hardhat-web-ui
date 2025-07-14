@@ -2,7 +2,7 @@
  * 区块详情视图
  */
 
-import { isLiveNetwork } from '../state.js';
+import { isLocalChain } from '../state.js';
 import { showToast, formatDateTime, shortenAddress } from '../utils.js';
 import { t } from '../i18n.js';
 
@@ -133,22 +133,7 @@ const renderBlockDetails = async (blockHash) => {
             <div class="card-body">
               <h5 class="card-title">${t('block.blockTransactions')} (${block.txInfo.length})</h5>
               <div class="table-responsive">
-                ${isLiveNetwork() ? `
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>${t('transaction.hash')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${block.txInfo.length > 0 ? block.txInfo.map(tx => `
-                      <tr>
-                        <td><a href="/transaction?hash=${tx.hash}" data-link><code>${tx.hash}</code></a></td>
-                      </tr>
-                    `).join('') : `<tr><td class="text-center">${t('block.noTransactions')}</td></tr>`}
-                  </tbody>
-                </table>
-                ` : `
+                ${isLocalChain() ? `
                 <table class="table table-hover">
                   <thead>
                     <tr>
@@ -173,6 +158,21 @@ const renderBlockDetails = async (blockHash) => {
                         <td>${tx.nonce || 0}</td>
                       </tr>
                     `).join('') : `<tr><td colspan="7" class="text-center">${t('block.noTransactions')}</td></tr>`}
+                  </tbody>
+                </table>
+                ` : `
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>${t('transaction.hash')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${block.txInfo.length > 0 ? block.txInfo.map(tx => `
+                      <tr>
+                        <td><a href="/transaction?hash=${tx.hash}" data-link><code>${tx.hash}</code></a></td>
+                      </tr>
+                    `).join('') : `<tr><td class="text-center">${t('block.noTransactions')}</td></tr>`}
                   </tbody>
                 </table>
                 `}

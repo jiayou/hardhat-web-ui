@@ -53,22 +53,24 @@ function useFields(object, fields)
   return handleResult(result);
 }
 
-async function isLiveNetwork(hre) {
+async function isLocalChain(hre) {
   const localNetworkIds = hre.config.webUI.localNetworkIds
   // defined in hardhat.config.js
 
   try {
     const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
-    return !localNetworkIds.includes(chainId);
+    const criteria = localNetworkIds.includes(parseInt(chainId))
+    return criteria;
   }
-  finally {
-    return true;
+  catch (error) {
+    console.log('treat network as non-local due to error:', error)
+    return false;
   }
 }
 
 module.exports = {
   handleResult,
   useFields,
-  isLiveNetwork,
+  isLocalChain,
   extractBlockInfo
 }
