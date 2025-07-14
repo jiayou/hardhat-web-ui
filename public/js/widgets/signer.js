@@ -102,8 +102,14 @@ export function openSignerDialog() {
   document.body.appendChild(modalContainer);
 
   // 初始化模态框
-  const modal = new bootstrap.Modal(document.getElementById('signerDialog'));
+  const modalElement = document.getElementById('signerDialog');
+  const modal = new bootstrap.Modal(modalElement);
   modal.show();
+
+  // 确保模态框在关闭时正确销毁
+  modalElement.addEventListener('hidden.bs.modal', function() {
+    modal.dispose();
+  });
 
   // 获取当前选中的signer和类型
   const selectedSigner = currentSigner();
@@ -234,6 +240,13 @@ export function openSignerDialog() {
     if (modalContainer && modalContainer.parentNode) {
       document.body.removeChild(modalContainer);
     }
+  });
+
+  // 使用Bootstrap的方式处理模态框关闭
+  const signerDialog = document.getElementById('signerDialog');
+  signerDialog.addEventListener('hide.bs.modal', function(event) {
+    // 这个事件在模态框隐藏之前触发
+    console.log('Modal is about to hide');
   });
 }
 
