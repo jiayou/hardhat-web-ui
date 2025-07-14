@@ -141,7 +141,13 @@ export function initContractDeployView(onDeploySuccess) {
         response.json().then(data => {
           // 显示转账确认框
           console.log("prepare-transfer response: ", data);
-          TransactionConfirm.show(data.txData);
+          TransactionConfirm.show(data.txData).then(result => {
+            // 可以根据 result.success 和 result.action 进行不同的后续处理
+            // 调用部署成功回调
+            if (typeof onDeploySuccess === 'function') {
+              onDeploySuccess(data.address);
+            }
+          });
         })
 
       })

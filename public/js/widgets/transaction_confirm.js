@@ -23,6 +23,8 @@ const TransactionConfirm = {
     }
    */
   show: function(txData) {
+    // 创建Promise并返回
+    return new Promise((resolve) => {
     // 解析交易数据
     const fromAddress = txData.from;
     const targetAddress = txData.to;
@@ -163,7 +165,8 @@ const TransactionConfirm = {
     const modal = new bootstrap.Modal(document.getElementById('transactionConfirmModal'));
     modal.show();
 
-    this._setupEventHandlers(modal, txData);
+    this._setupEventHandlers(modal, txData, resolve);
+  });
   },
 
   /**
@@ -239,7 +242,7 @@ const TransactionConfirm = {
     }, 5000); // 每5秒轮询一次
   },
   
-  _setupEventHandlers: function(modal, txData) {
+  _setupEventHandlers: function(modal, txData, resolvePromise) {
     // 保存原始值，用于还原按钮
     const originalGas = parseInt(txData.gas, 16);
     const originalNonce = parseInt(txData.nonce, 16);
@@ -346,6 +349,19 @@ const TransactionConfirm = {
       });
     });
 
+    // 监听取消和关闭按钮点击事件，用于处理Promise回调
+    document.getElementById('cancelBtn')?.addEventListener('click', () => {
+      resolvePromise({success: false, action: 'cancelled'});
+    });
+
+    document.getElementById('closeBtn')?.addEventListener('click', () => {
+      resolvePromise({success: true, action: 'closed'});
+    });
+
+    // 监听模态框关闭事件
+    document.getElementById('transactionConfirmModal')?.addEventListener('hidden.bs.modal', () => {
+      resolvePromise({success: false, action: 'dismissed'});
+    });
   }
 };
 
