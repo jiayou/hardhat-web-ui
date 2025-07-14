@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/bootstrap-icons/1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/static/highlight.js/11.8.0/styles/github.min.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/signer.css">
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -21,7 +22,14 @@
         </div>
       </div>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <!-- 用户图标按钮 - 小屏幕显示 -->
+      <div class="me-2 d-lg-none ms-auto">
+        <button class="btn btn-outline-light navbar-btn" id="signerIconBtn">
+          <i class="bi bi-person-circle"></i>
+        </button>
+      </div>
+
+      <button class="navbar-toggler btn btn-outline-light navbar-btn ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -40,22 +48,14 @@
           </li>
         </ul>
 
-        <!-- Signer选择器 -->
+        <!-- 右侧功能区域 -->
         <div class="ms-auto d-flex align-items-center">
-          <div class="me-3">
-            <div class="input-group">
-              <label class="input-group-text" data-i18n="nav.signer">Signer:</label>
-              <span class="form-control form-control-sm text-truncate" id="currentSignerAddress" style="min-width: 200px;" data-i18n="common.loading">加载中...</span>
-              <button class="btn btn-sm btn-outline-light" id="switchSigner" data-i18n-attr="title:wallet.selectAccount" data-i18n="nav.switchSigner">切换</button>
-            </div>
-          </div>
-          
-          <!-- 语言切换 -->
-          <div class="ms-3 d-flex align-items-center">
+          <!-- 语言切换 - 在大屏幕上显示在Signer选择器左边 -->
+          <div class="d-none d-lg-flex align-items-center me-3">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <button class="btn btn-outline-light navbar-btn" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-globe"></i>
-                <span id="currentLanguage">中文</span>
+                <span id="currentLanguage" class="d-none d-md-inline">中文</span>
               </button>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown" id="languageSelector">
                 <li><a class="dropdown-item" href="#" data-lang="zh-CN">中文</a></li>
@@ -63,8 +63,16 @@
               </ul>
             </div>
           </div>
-        </div>
 
+          <!-- 大屏幕显示完整的 Signer 选择器 -->
+          <div class="d-none d-lg-block">
+            <div class="input-group flex-nowrap">
+              <label class="input-group-text" data-i18n="nav.signer">Signer:</label>
+              <span class="form-control form-control-sm text-truncate" id="currentSignerAddress" style="min-width: 150px;" data-i18n="common.loading">加载中...</span>
+              <button class="btn btn-sm btn-outline-light" id="switchSigner" data-i18n-attr="title:wallet.selectAccount" data-i18n="nav.switchSigner">切换</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -86,7 +94,7 @@
   <!-- 脚本引用 -->
   <script src="/static/twitter-bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
   <script src="/static/socket.io/4.7.2/socket.io.min.js"></script>
-  
+
   <!-- 自定义脚本 -->
   <script src="js/i18n.js" type="module"></script>
   <script src="js/state.js" type="module"></script>
@@ -100,6 +108,7 @@
   <script src="js/views/account_list.js" type="module"></script>
   <script src="js/views/account_item.js" type="module"></script>
   <script src="js/views/contract.js" type="module"></script>
+  <script src="js/signer-init.js" type="module"></script>
   <script src="js/app.js" type="module"></script>
 </body>
 </html>

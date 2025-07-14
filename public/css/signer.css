@@ -1,0 +1,45 @@
+/* Signer组件样式 */
+.input-group.flex-nowrap {
+  white-space: nowrap;
+  flex-wrap: nowrap !important;
+}
+
+/* 导航栏按钮统一样式 */
+.navbar-btn {
+  height: 38px;
+  width: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+}
+
+/* 折叠菜单按钮样式调整 */
+.navbar-toggler.navbar-btn {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* 语言按钮中的文本调整 */
+#languageDropdown {
+  width: auto;
+  padding: 0 10px;
+}
+
+/* 确保语言下拉菜单的位置正确 */
+#languageDropdown + .dropdown-menu {
+  margin-top: 8px;
+  min-width: 100px;
+}
+
+/* 确保导航栏上的按钮在小屏幕上更紧凑 */
+@media (max-width: 992px) {
+  .navbar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navbar-nav .nav-item {
+    margin-right: 0.5rem;
+  }
+}
