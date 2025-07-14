@@ -242,8 +242,8 @@ async function loadContractDetails(contractName, tabToShow) {
 
       // 清空交互区域
       document.getElementById('contractAddress').value = '';
-      document.getElementById('readFunctions').innerHTML = '<p class="text-center text-muted">请先加载合约</p>';
-      document.getElementById('writeFunctions').innerHTML = '<p class="text-center text-muted">请先加载合约</p>';
+      document.getElementById('readFunctions').innerHTML = `<p class="text-center text-muted" data-i18n="contract.pleaseLoadContract">${t('contract.pleaseLoadContract')}</p>`;
+      document.getElementById('writeFunctions').innerHTML = `<p class="text-center text-muted" data-i18n="contract.pleaseLoadContract">${t('contract.pleaseLoadContract')}</p>`;
 
       // 更新URL参数（不包含标签页，因为标签页可能在后续单独设置）
       updateUrlParams(contractName, null);

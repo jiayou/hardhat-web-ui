@@ -1,32 +1,32 @@
 # Hardhat Web UI Plugin
 
-- 提供WEBUI 查看网络、区块、账户、合约等信息
-- 提供与合约交互的功能（类似REMIX）
+- Provides a WEB UI to view network, block, account, contract and other information
+- Provides contract interaction functionality (similar to REMIX)
 
-## 特性
-- 查看区块
-- 查看账户
-- 查看交易
-- 浏览项目中的所有合约
-- 查看合约ABI和字节码
-- 部署合约到网络
-- 与已部署的合约交互（调用读写函数）
+## Features
+- View blocks
+- View accounts
+- View transactions
+- Browse all contracts in the project
+- View contract ABI and bytecode
+- Deploy contracts to the network
+- Interact with deployed contracts (call read and write functions)
 
-## 安装
+## Installation
 
 ```bash
 npm install hardhat-web-ui --save-dev
 ```
 
-## 使用方法
+## Usage
 
-在你的hardhat.config.js中引入插件:
+Import the plugin in your hardhat.config.js:
 
 ```javascript
 require("hardhat-web-ui");
 ```
 
-启动Web UI:
+Start the Web UI:
 
 ```bash
 npx hardhat web-ui --network <network-name>
@@ -34,11 +34,11 @@ npx hardhat web-ui --network <network-name>
 npx hardhat web-ui --network localhost
 ```
 
-然后在浏览器中访问 http://localhost:3337
+Then access http://localhost:3337 in your browser
 
-## 配置
+## Configuration
 
-可以在hardhat.config.js中配置插件:
+The plugin can be configured in hardhat.config.js:
 
 ```javascript
 module.exports = {
@@ -49,7 +49,3 @@ module.exports = {
   }
 };
 ```
-
-## 许可证
-
-MIT

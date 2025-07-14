@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A Hardhat plugin that provides a web interface for blockchain interaction",
   "main": "index.js",
-  "author": "CodeGeeX",
+  "author": "jiayou@github",
   "license": "MIT",
   "peerDependencies": {
     "hardhat": "^2.0.0"

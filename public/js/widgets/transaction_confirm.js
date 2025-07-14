@@ -323,9 +323,8 @@ const TransactionConfirm = {
       .then((txHash) => {
         console.log('Transaction sent with hash:', txHash);
         // 显示交易哈希
-        const txHashDisplay = `<div>${t('transactionConfirm.transactionSent')}: ${txHash} <a href="#" id="viewReceiptLink" class="text-primary ms-2">${t('transactionConfirm.viewReceipt')}</a></div>`;
+        const txHashDisplay = `${t('transactionConfirm.transactionSent')}: ${txHash}`;
         showTxStatus(txHashDisplay);
-        showToast('Success', `${t('transactionConfirm.transactionSent')}: ${txHash}`);
         
         // 为查看回执链接添加事件监听
         document.getElementById('viewReceiptLink')?.addEventListener('click', (e) => {
@@ -342,7 +341,6 @@ const TransactionConfirm = {
       .catch((error) => {
         console.error('Error sending transaction:', error);
         showTxStatus(`${t('transactionConfirm.transactionFailedWithError')}: ${error.message}`, true);
-        showToast('Error', `${t('transactionConfirm.transactionFailedWithError')}: ${error.message}`);
         // 显示关闭按钮
         updateButtonsForTx(true);
       });
