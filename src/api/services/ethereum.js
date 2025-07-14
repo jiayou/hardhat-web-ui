@@ -25,7 +25,7 @@ async function getBlockList(provider, blockNum = null, batchSize = 10, fields = 
 
 
 //=============================================================== 区块详情
-async function getBlockById(provider, blockId) {
+async function getBlockById(hre, provider, blockId) {
   try {
     if ( ! blockId.startsWith('0x')) {
       blockId = parseInt(blockId);
@@ -39,7 +39,7 @@ async function getBlockById(provider, blockId) {
 
     let txInfo = [];
     for (let tx_hash of block.transactions) {
-      if (isLiveNetwork()) {
+      if (isLiveNetwork(hre)) {
         tx_item = { hash: tx_hash }
       }
       else {

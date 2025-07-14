@@ -71,7 +71,8 @@ router.get('/:address', async (req, res) => {
     }
     
     let transactions = {data: [], nextBlock: -1};
-    if (isLiveNetwork() === false) {
+    const { hre } = req.app.locals;
+    if (isLiveNetwork(hre) === false) {
       // 测试链：获取相关交易
       transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
     }

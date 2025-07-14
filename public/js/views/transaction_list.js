@@ -36,6 +36,7 @@ const TransactionListView = async () => {
           </div>
         </div>
 
+        ${isLiveNetwork() ? '': `
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
             <h5>${t('transaction.list')}</h5>
@@ -76,6 +77,8 @@ const TransactionListView = async () => {
             </div>
           </div>
         </div>
+        `}
+
       </div>
     `;
   } catch (error) {

@@ -6,7 +6,7 @@
 - 以node作为后端服务器
 - npx hardhat --network <network> web-ui
 - 连接的区块链网络取决于hardhat
-- 访问http://localhost:3337查看web UI
+- 访问http://localhost:31337查看web UI
 
 ## 前端设计
 - 前端页面使用express渲染

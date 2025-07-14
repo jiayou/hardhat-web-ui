@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const ethereum = require('../services/ethereum');
+const { isLiveNetwork } = require('../utils');
 
 // 获取交易列表
 router.get('/', async (req, res) => {
@@ -14,8 +15,11 @@ router.get('/', async (req, res) => {
     const batchSize = parseInt(req.query.batchSize) || 10;
     const fields = req.query.fields?.split(',') || [];
     
-
-    const result = await ethereum.searchTransactions(httpProvider, blockNum, batchSize, fields);
+    let result = {data: [], nextBlock: -1};
+    const { hre } = req.app.locals;
+    if (isLiveNetwork(hre)===false) {
+      result = await ethereum.searchTransactions(httpProvider, blockNum, batchSize, fields);
+    }
     res.json(result);
   } catch (error) {
     console.error('Error fetching transactions:', error);

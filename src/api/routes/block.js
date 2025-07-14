@@ -24,11 +24,11 @@ router.get('/', async (req, res) => {
 // 获取区块详情（通过编号或哈希）
 router.get('/:blockIdentifier', async (req, res) => {
   try {
-    const { httpProvider } = req.app.locals;
+    const { hre, httpProvider } = req.app.locals;
     const blockIdentifier = req.params.blockIdentifier;
     let block;
 
-    block = await ethereum.getBlockById(httpProvider, blockIdentifier)
+    block = await ethereum.getBlockById(hre, httpProvider, blockIdentifier)
     res.json({ block });
   } catch (error) {
     if (error.message === 'Block not found') {

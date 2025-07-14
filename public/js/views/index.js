@@ -51,36 +51,6 @@ const IndexView = async () => {
             </div>
           </div>
         </div>
-
-        <div class="col-md-12 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">最近区块</h5>
-              <div class="table-responsive">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>区块号</th>
-                      <th>哈希</th>
-                      <th>时间</th>
-                      <th>交易数</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentBlocks">
-                    ${networkData.recentBlocks ? networkData.recentBlocks.map(block => `
-                      <tr>
-                        <td><a href="/block?number=${block.number}" data-link>${block.number}</a></td>
-                        <td><code>${block.hash.slice(0, 10)}...</code></td>
-                        <td>${formatDateTime(block.timestamp)}</td>
-                        <td>${block.transactions.length}</td>
-                      </tr>
-                    `).join('') : '<tr><td colspan="4">No blocks available</td></tr>'}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     `;
   } catch (error) {

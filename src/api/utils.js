@@ -1,4 +1,4 @@
-// const ethers = require('ethers');
+const express = require('express');
 
 /**
  * 处理函数调用结果，解决JSON序列化问题（主要针对BigInt类型）
@@ -28,7 +28,7 @@ async function extractBlockInfo(provider, startBlock, batchSize, extractFunc) {
   let result = [];
   let i = startBlock
   for (; i >= 0 && result.length < batchSize; i--) {
-    console.log('extractBlockInfo', i)
+    // console.log('extractBlockInfo', i)
     let block = await provider.getBlock(i, true);
     let info = await extractFunc(block);
     //   console.log("info:", info)
@@ -53,11 +53,13 @@ function useFields(object, fields)
   return handleResult(result);
 }
 
-async function isLiveNetwork() {
-  const liveNetworkIds = [ 1, 11155111 ];
+async function isLiveNetwork(hre) {
+  const localNetworkIds = hre.config.webUI.localNetworkIds
+  // defined in hardhat.config.js
+
   try {
     const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
-    return liveNetworkIds.includes(chainId);
+    return !localNetworkIds.includes(chainId);
   }
   finally {
     return true;

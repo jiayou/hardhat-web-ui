@@ -9,7 +9,7 @@ const { launchServer } = require('./server');
 extendConfig((config) => {
   config.webUI = {
     enabled: true,
-    port: 3337,
+    port: 31337,
   };
 });
 
@@ -21,7 +21,7 @@ task('web-ui', 'Starts the web UI server for interacting with the blockchain')
       return;
     }
 
-    console.log(`Starting Web UI server on http://localhost:${hre.config.webUI.port}`);
+    console.log(`Starting Web UI server...`);
     await launchServer(hre, hre.config.webUI.port);
 
     // 保持进程活跃

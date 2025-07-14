@@ -3,7 +3,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { isLiveNetwork } = require('../utils');
+const { isLiveNetwork, handleResult } = require('../utils');
 
 // 获取最新区块高度
 router.get('/latest-block', async (req, res) => {
@@ -21,16 +21,18 @@ router.get('/latest-block', async (req, res) => {
 router.get('/info', async (req, res) => {
   try {
     const { hre } = req.app.locals;
-    const networkName = hre.network.name;
-    const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
-    
-    res.json({
+    result = {
       network: {
-        name: networkName,
-        chainId: chainId.toString(),
+        name: hre.network.name,
+        chainId: await ethers.provider.getNetwork().then(net => net.chainId),
         provider: hre.network.config.url || 'hardhat'
+      },
+      gasPrice: (await ethers.provider.getFeeData()).gasPrice,
+      latestBlock: {
+        number: await ethers.provider.getBlockNumber(),
       }
-    });
+    }
+    res.json(handleResult(result))
   } catch (error) {
     console.error('Error fetching network info:', error);
     res.status(500).json({ error: 'Failed to fetch network info' });
@@ -39,7 +41,8 @@ router.get('/info', async (req, res) => {
 
 // 是否是公链（已知ID）
 router.get('/is_live', async (req, res) => {
-    res.json({ is_live: await isLiveNetwork() });
+    const { hre } = req.app.locals;
+    res.json({ is_live: await isLiveNetwork(hre) });
 })
 
 module.exports = router;
