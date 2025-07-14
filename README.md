@@ -44,7 +44,7 @@ npx hardhat web-ui --network localhost
 module.exports = {
   webUI: {
     enabled: true,
-    localNetworkIds: [31337, ...],
+    localChainIds: [31337, ...],
     port: 3337,
   }
 };

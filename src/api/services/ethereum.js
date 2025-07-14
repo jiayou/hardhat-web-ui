@@ -38,7 +38,7 @@ async function getBlockById(hre, provider, blockId) {
     // return await formatBlockDetails(provider, block);
 
     let txInfo = [];
-    if (isLocalChain(hre)) {
+    if (await isLocalChain(hre)) {
       for (let tx_hash of block.transactions) {
         tx_item = await provider.getTransaction(tx_hash);
         txInfo.push(handleResult(tx_item));

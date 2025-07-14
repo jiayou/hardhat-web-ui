@@ -54,12 +54,13 @@ function useFields(object, fields)
 }
 
 async function isLocalChain(hre) {
-  const localNetworkIds = hre.config.webUI.localNetworkIds
+  const localChainIds = hre.config.webUI.localChainIds
   // defined in hardhat.config.js
 
   try {
     const chainId = await ethers.provider.getNetwork().then(net => net.chainId);
-    const criteria = localNetworkIds.includes(parseInt(chainId))
+    const criteria = localChainIds.includes(parseInt(chainId))
+    // console.log('isLocalChain',localChainIds, chainId, criteria)
     return criteria;
   }
   catch (error) {

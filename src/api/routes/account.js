@@ -72,7 +72,7 @@ router.get('/:address', async (req, res) => {
     
     let transactions = {data: [], nextBlock: -1};
     const { hre } = req.app.locals;
-    if (isLocalChain(hre)) {
+    if (await isLocalChain(hre)) {
       // 测试链：获取相关交易
       transactions = await ethereum.searchAccountTransactions(httpProvider, blockNum, batchSize, address);
     }
