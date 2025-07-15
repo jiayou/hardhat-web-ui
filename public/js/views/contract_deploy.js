@@ -116,8 +116,7 @@ export function initContractDeployView(onDeploySuccess) {
             <p>${t('contract.noWallet')}</p>
           </div>
         `;
-        // TODO:WALLET
-        // return;
+        throw new Error("MetaMask未安装或不可用");
       }
 
       fetch('/api/contract/prepare-deploy', {
@@ -144,8 +143,19 @@ export function initContractDeployView(onDeploySuccess) {
           TransactionConfirm.show(data.txData).then(result => {
             // 可以根据 result.success 和 result.action 进行不同的后续处理
             // 调用部署成功回调
-            if (typeof onDeploySuccess === 'function') {
-              onDeploySuccess(data.address);
+            if (typeof onDeploySuccess === 'function' && result.txHash) {
+              // 从交易哈希中查询合约地址
+              fetchContractAddressFromTxHash(result.txHash)
+                .then(address => {
+                  if (address) {
+                    onDeploySuccess(address);
+                  } else {
+                    console.error('未能从交易中获取合约地址');
+                  }
+                })
+                .catch(error => {
+                  console.error('获取合约地址时出错:', error);
+                });
             }
           });
         })
@@ -211,4 +221,41 @@ export function initContractDeployView(onDeploySuccess) {
     }
 
   })
+
+  /**
+   * 从交易哈希中查询合约地址
+   * @param {string} txHash - 交易哈希
+   * @returns {Promise<string>} 部署的合约地址
+   */
+  function fetchContractAddressFromTxHash(txHash) {
+    return new Promise((resolve, reject) => {
+      // 轮询交易回执以获取合约地址
+      const checkReceipt = () => {
+        fetch(`/api/transaction/${txHash}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.receipt) {
+              // 交易已确认，获取合约地址
+              const contractAddress = data.receipt.contractAddress;
+              if (contractAddress) {
+                resolve(contractAddress);
+              } else {
+                // 交易成功但没有合约地址（可能不是合约部署交易）
+                reject(new Error('交易成功但未创建合约'));
+              }
+            } else {
+              // 交易尚未确认，继续轮询
+              setTimeout(checkReceipt, 2000);
+            }
+          })
+          .catch(error => {
+            console.error('轮询交易回执时出错:', error);
+            reject(error);
+          });
+      };
+
+      // 开始轮询
+      checkReceipt();
+    });
+  }
 }

@@ -69,7 +69,7 @@
     "viewReceipt": "View Receipt",
     "processingTooLong": "Transaction taking too long, please check status later",
     "confirmInWallet": "Please confirm the transaction in your wallet...",
-    "transactionSent": "Transaction sent! Transaction hash",
+    "transactionSent": "Transaction sent!",
     "transactionFailedWithError": "Transaction failed"
   },
   "waitReceipt": {
@@ -302,6 +302,13 @@
     "account": "Wallet Account",
     "noConnectedAccounts": "No connected wallet accounts",
     "connectedAccounts": "Connected wallet accounts",
-    "fetchAccountsFailed": "Failed to fetch connected accounts"
+    "fetchAccountsFailed": "Failed to fetch connected accounts",
+    "connectFailed": "Failed to connect wallet",
+    "connectSuccess": "Connected Successfully",
+    "accountsUpdated": "Account list updated",
+    "connectRejected": "Wallet connection request rejected",
+    "noProvider": "No MetaMask or other Ethereum wallet detected",
+    "accountsConnected": "Connected wallet accounts",
+    "noAccount": "No account? Connect wallet"
   }
 }

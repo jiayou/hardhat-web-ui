@@ -3,18 +3,7 @@ import { currentSigner } from '../state.js';
 import { t } from '../i18n.js';
 let walletAccounts = [];
 
-async function testConnectedWalletAccounts() {
-  // 调试用
-  return [
-    "0x1111111111111111111111111111111111111111",
-    "0x2222222222222222222222222222222222222222",
-    "0x3333333333333333333333333333333333333333",
-  ]
-}
-
 async function fetchConnectedWalletAccounts() {
-  // return await testConnectedWalletAccounts();
-
   if (!window.ethereum) return []
 
   try {
@@ -83,6 +72,11 @@ export function openSignerDialog() {
                 <!-- 钱包账户单选按钮将在这里动态填充 -->
               </div>
             </div>
+            <div>
+              <a href="#" class="text-primary small" id="connectWalletLink">
+                <span data-i18n="wallet.noAccount">找不到账户？连接钱包</span>
+              </a>
+            </div>
           </div>
           <div class="modal-footer d-flex justify-content-between">
             <div id="currentSelectedAddress" class="text-muted"></div>
@@ -105,6 +99,27 @@ export function openSignerDialog() {
   const modalElement = document.getElementById('signerDialog');
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
+
+  // 添加连接钱包链接的点击事件
+  document.getElementById('connectWalletLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    if (window.ethereum) {
+      window.ethereum.request({
+        method: 'eth_requestAccounts'
+      }).then(accounts => {
+        console.log(`${t('wallet.accountsConnected')}:`, accounts);
+        // 更新钱包账户列表
+        walletAccounts = accounts.map(addr => addr.toLowerCase());
+        renderWalletAccountsList();
+        showToast(t('wallet.connectSuccess'), t('wallet.accountsUpdated'), 'success');
+      }).catch(error => {
+        console.error(`${t('wallet.connectFailed')}:`, error);
+        showToast(t('error.title'), t('wallet.connectRejected'), 'danger');
+      });
+    } else {
+      showToast(t('error.title'), t('wallet.noProvider'), 'danger');
+    }
+  });
 
   // 确保模态框在关闭时正确销毁
   modalElement.addEventListener('hidden.bs.modal', function() {

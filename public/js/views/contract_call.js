@@ -371,8 +371,7 @@ async function walletCall(e, contract) {
 
   // 通过MetaMask发送交易
   if (!window.ethereum) {
-    // TODO:WALLET
-    // throw new Error('MetaMask或其他兼容钱包未安装');
+    throw new Error('MetaMask或其他兼容钱包未安装');
   }
 
   if (!address || !functionName || !contract) {

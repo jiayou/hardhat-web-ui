@@ -325,8 +325,10 @@ const TransactionConfirm = {
       })
       .then((txHash) => {
         console.log('Transaction sent with hash:', txHash);
+        // 保存交易哈希以便返回
+        currentTxHash = txHash;
         // 显示交易哈希
-        const txHashDisplay = `${t('transactionConfirm.transactionSent')}: ${txHash}`;
+        const txHashDisplay = `${t('transactionConfirm.transactionSent')}`;
         showTxStatus(txHashDisplay);
         
         // 为查看回执链接添加事件监听
@@ -349,18 +351,21 @@ const TransactionConfirm = {
       });
     });
 
+    // 存储交易哈希的变量
+    let currentTxHash = null;
+
     // 监听取消和关闭按钮点击事件，用于处理Promise回调
     document.getElementById('cancelBtn')?.addEventListener('click', () => {
-      resolvePromise({success: false, action: 'cancelled'});
+      resolvePromise({success: false, action: 'cancelled', txHash: currentTxHash});
     });
 
     document.getElementById('closeBtn')?.addEventListener('click', () => {
-      resolvePromise({success: true, action: 'closed'});
+      resolvePromise({success: true, action: 'closed', txHash: currentTxHash});
     });
 
     // 监听模态框关闭事件
     document.getElementById('transactionConfirmModal')?.addEventListener('hidden.bs.modal', () => {
-      resolvePromise({success: false, action: 'dismissed'});
+      resolvePromise({success: false, action: 'dismissed', txHash: currentTxHash});
     });
   }
 };

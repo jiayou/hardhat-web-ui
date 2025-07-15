@@ -238,7 +238,14 @@
     "account": "钱包账户",
     "noConnectedAccounts": "没有连接的钱包账户",
     "connectedAccounts": "已连接的钱包账户",
-    "fetchAccountsFailed": "获取已连接账户失败"
+    "fetchAccountsFailed": "获取已连接账户失败",
+    "connectFailed": "连接钱包失败",
+    "connectSuccess": "连接成功",
+    "accountsUpdated": "账户列表已更新",
+    "connectRejected": "钱包连接请求被拒绝",
+    "noProvider": "未检测到MetaMask或其他以太坊钱包",
+    "accountsConnected": "已连接的钱包账户",
+    "noAccount": "找不到账户？连接钱包"
   },
   "signer": {
     "selectSigner": "选择Signer",
@@ -274,7 +281,7 @@
     "viewReceipt": "查看回执",
     "processingTooLong": "交易处理时间过长，请稍后查看状态",
     "confirmInWallet": "请在钱包中确认交易...",
-    "transactionSent": "交易已发送！交易哈希",
+    "transactionSent": "交易已发送！",
     "transactionFailedWithError": "交易失败"
   },
   "waitReceipt": {

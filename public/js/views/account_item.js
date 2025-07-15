@@ -221,8 +221,7 @@ AccountItemView.init = (address) => {
 
         // 确保MetaMask已连接并有权限
         if (!window.ethereum) {
-          // TODO:WALLET
-          // throw new Error("MetaMask未安装或不可用");
+          throw new Error("MetaMask未安装或不可用");
         }
 
         fetch('/api/prepare-transfer', {
@@ -245,7 +244,11 @@ AccountItemView.init = (address) => {
           response.json().then(data => {
             // 显示转账确认框
             console.log("prepare-transfer response: ", data);
-            TransactionConfirm.show(data.txData);
+            TransactionConfirm.show(data.txData).then(() =>{
+              // 清空输入框
+              document.getElementById('transferAmount').value = '';
+              updateTransferBtnState();
+            });
           })
         })
       }
