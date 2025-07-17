@@ -12,8 +12,8 @@
 - Deploy contracts to the network
 - Interact with deployed contracts (call read and write functions)
 
-![contract interaction](./doc/Screenshot1.png)
-![wallet transaction](./doc/Screenshot2.png)
+![contract interaction](/doc/Screenshot1.png)
+![wallet transaction](/doc/Screenshot2.png)
 
 
 ## Installation
